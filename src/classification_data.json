@@ -1,0 +1,1419 @@
+{
+  "meta": {
+    "dataset": "海外舆情监测对象与涉华内容（统一分类）",
+    "note": "对象按需求表四层分层，附敏感级与人物画像（职务/机构/影响力/异常标记）；内容按核心议题、情感、风险分级标注。",
+    "asOf": "2026-08-26"
+  },
+  "objects": [
+    {
+      "id": "obj-唐纳德-特朗普",
+      "name": "唐纳德·特朗普",
+      "account": "@realDonaldTrump",
+      "objectType": "政要",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "美国总统",
+      "organization": "美国政府",
+      "influence": "极高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-马可-鲁比奥",
+      "name": "马可·鲁比奥",
+      "account": "@marcorubio",
+      "objectType": "政要",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "美国国务卿",
+      "organization": "美国政府",
+      "influence": "高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-詹姆斯-戴维-万斯",
+      "name": "詹姆斯·戴维·万斯",
+      "account": "@JDVance",
+      "objectType": "政要",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "美国副总统",
+      "organization": "美国政府",
+      "influence": "高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-战略与国际研究中心-csis-研究员",
+      "name": "战略与国际研究中心（CSIS）研究员",
+      "account": "（机构）",
+      "objectType": "智库/精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "研究员",
+      "organization": "CSIS",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-美中贸易全国委员会会长",
+      "name": "美中贸易全国委员会会长",
+      "account": "（匿名）",
+      "objectType": "商业精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "会长",
+      "organization": "美中贸易全国委员会",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-某跨国企业高管",
+      "name": "某跨国企业高管",
+      "account": "（匿名）",
+      "objectType": "商业精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "高管",
+      "organization": "某跨国企业",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-cnn",
+      "name": "CNN",
+      "account": "@CNN",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "美国有线电视新闻网",
+      "organization": "CNN",
+      "influence": "极高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-纽约时报",
+      "name": "纽约时报",
+      "account": "@nytimes",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "美国主流报纸",
+      "organization": "纽约时报",
+      "influence": "极高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-路透社",
+      "name": "路透社",
+      "account": "@Reuters",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "国际通讯社",
+      "organization": "路透社",
+      "influence": "极高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-华尔街日报",
+      "name": "华尔街日报",
+      "account": "@WSJ",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "财经报纸",
+      "organization": "华尔街日报",
+      "influence": "高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-bbc",
+      "name": "BBC",
+      "account": "@BBC",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "英国广播公司",
+      "organization": "BBC",
+      "influence": "极高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-美联社",
+      "name": "美联社",
+      "account": "@AP",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "国际通讯社",
+      "organization": "美联社",
+      "influence": "极高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-涉华评论账号-sinowatch",
+      "name": "涉华评论账号 @Sinowatch",
+      "account": "@Sinowatch",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "对华政策评论员",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [
+        "疑似批量转发"
+      ],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-涉华评论账号-pacificreview",
+      "name": "涉华评论账号 @PacificReview",
+      "account": "@PacificReview",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "对华政策评论员",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [
+        "疑似水军"
+      ],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-涉华评论账号-techdecouple",
+      "name": "涉华评论账号 @TechDecouple",
+      "account": "@TechDecouple",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "科技议题评论员",
+      "organization": "X平台",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-涉华评论账号-climateasia",
+      "name": "涉华评论账号 @ClimateAsia",
+      "account": "@ClimateAsia",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "气候议题评论员",
+      "organization": "X平台",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-涉华评论账号-asiainsight",
+      "name": "涉华评论账号 @AsiaInsight",
+      "account": "@AsiaInsight",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "涉华议题评论员",
+      "organization": "X平台",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "涉华舆情样本数据"
+      ]
+    },
+    {
+      "id": "obj-ivana-trump",
+      "name": "Ivana Trump",
+      "account": "",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "第一任妻",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-marla-maples",
+      "name": "Marla Maples",
+      "account": "",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "第二任妻",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-梅拉尼娅-特朗普",
+      "name": "梅拉尼娅·特朗普",
+      "account": "@MELANIATRUMP",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "现任妻子；第一夫人",
+      "organization": "特朗普家族",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-小唐纳德-特朗普",
+      "name": "小唐纳德·特朗普",
+      "account": "@DonaldJTrumpJr",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "长子",
+      "organization": "特朗普家族",
+      "influence": "高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-伊万卡-特朗普",
+      "name": "伊万卡·特朗普",
+      "account": "@IvankaTrump",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "长女",
+      "organization": "特朗普家族",
+      "influence": "高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-埃里克-特朗普",
+      "name": "埃里克·特朗普",
+      "account": "@EricTrump",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "次子",
+      "organization": "特朗普家族",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-蒂芙尼-特朗普",
+      "name": "蒂芙尼·特朗普",
+      "account": "@TiffanyATrump",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "次女",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-巴伦-特朗普",
+      "name": "巴伦·特朗普",
+      "account": "",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "大学生",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-贾里德-库什纳",
+      "name": "贾里德·库什纳",
+      "account": "@jaredkushner",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "女婿；Ivanka之夫",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-劳拉-特朗普",
+      "name": "劳拉·特朗普",
+      "account": "@LaraLeaTrump",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "前RNC联合主席",
+      "organization": "特朗普家族",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-贝蒂娜-安德森",
+      "name": "贝蒂娜·安德森",
+      "account": "",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "Don Jr.新婚妻子",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-michael-boulos",
+      "name": "Michael Boulos",
+      "account": "",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "Tiffany丈夫；黎巴嫩商人",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-alexander-trump-boulos",
+      "name": "Alexander Trump Boulos",
+      "account": "",
+      "objectType": "家族成员",
+      "layer": "第一层",
+      "sensitivity": "最高敏感级",
+      "title": "Tiffany之子；特朗普第11个孙辈",
+      "organization": "特朗普家族",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-family-report.html"
+      ]
+    },
+    {
+      "id": "obj-tucker-carlson",
+      "name": "Tucker Carlson",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "前Fox News主播；独立媒体人",
+      "organization": "Fox News",
+      "influence": "高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-sean-hannity",
+      "name": "Sean Hannity",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "Fox News 9PM ET；联播电台",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-laura-ingraham",
+      "name": "Laura Ingraham",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "Fox News 7PM ET",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-jeanine-pirro",
+      "name": "Jeanine Pirro",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "The Five；前检察官",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-jesse-watters",
+      "name": "Jesse Watters",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "Fox Primetime",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-maria-bartiromo",
+      "name": "Maria Bartiromo",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "Fox Business/Fox News",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-lou-dobbs",
+      "name": "Lou Dobbs",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "前Fox Business主播",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-bill-o-reilly",
+      "name": "Bill O'Reilly",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "前Fox主播；独立媒体",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-fox-friends",
+      "name": "FOX & Friends",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "Fox早间节目",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-katrina-campins",
+      "name": "Katrina Campins",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "Fox主持人；学徒成员",
+      "organization": "Fox News",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-geraldo-rivera",
+      "name": "Geraldo Rivera",
+      "account": "",
+      "objectType": "媒体",
+      "layer": "第二层B",
+      "sensitivity": "实名开放",
+      "title": "资深记者；Fox撰稿人",
+      "organization": "Fox News",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-rep-jim-jordan",
+      "name": "Rep. Jim Jordan",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "俄亥俄州众议员；司法委员会主席",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-elon-musk",
+      "name": "Elon Musk",
+      "account": "@elonmusk",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "X所有者；DOGE负责人；Tesla/SpaceX CEO",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-dan-scavino-jr",
+      "name": "Dan Scavino Jr.",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "社交媒体主管；前白宫通讯",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-mark-meadows",
+      "name": "Mark Meadows",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "前白宫幕僚长",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-mike-pence",
+      "name": "Mike Pence",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "第48任副总统",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-kevin-mccarthy",
+      "name": "Kevin McCarthy",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "第55任众议院议长",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-mitch-mcconnell",
+      "name": "Mitch McConnell",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "参议院共和党领袖",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-kellyanne-conway",
+      "name": "Kellyanne Conway",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "前竞选经理；白宫顾问",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-kimberly-guilfoyle",
+      "name": "Kimberly Guilfoyle",
+      "account": "",
+      "objectType": "政治精英",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "驻希腊大使；前Fox主播；Don Jr.前未婚妻",
+      "organization": "美国政界",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-james-o-keefe",
+      "name": "James O'Keefe",
+      "account": "@JamesOKeefeIII",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "O'Keefe Media Group CEO；Project Veritas创始人",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-joe-rogan",
+      "name": "Joe Rogan",
+      "account": "@joerogan",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "JRE播客主持人",
+      "organization": "X平台",
+      "influence": "高",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-charlie-kirk",
+      "name": "Charlie Kirk",
+      "account": "@charliekirk11",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "TPUSA创始人",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-laura-loomer",
+      "name": "Laura Loomer",
+      "account": "@LauraLoomer",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "右翼活动家",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-benny-johnson",
+      "name": "Benny Johnson",
+      "account": "@bennyjohnson",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "TPUSA媒体人",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-candace-owens",
+      "name": "Candace Owens",
+      "account": "@RealCandaceO",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "保守派评论家",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-dan-bongino",
+      "name": "Dan Bongino",
+      "account": "@dbongino",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "前特勤局特工；评论员",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-riley-gaines",
+      "name": "Riley Gaines",
+      "account": "@Riley_Gaines_",
+      "objectType": "大V",
+      "layer": "第三层",
+      "sensitivity": "实名开放",
+      "title": "女权/体育议题活动家；Lara受访",
+      "organization": "X平台",
+      "influence": "中",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-wlfi",
+      "name": "WLFI",
+      "account": "@worldlibertyfi",
+      "objectType": "商业/机构",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "特朗普家族加密项目",
+      "organization": "商业/机构",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-realtrumpcoins",
+      "name": "realtrumpcoins",
+      "account": "@realtrumpcoins1",
+      "objectType": "商业/机构",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "Trump Organization官方伙伴",
+      "organization": "商业/机构",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-meredith-o-rourke",
+      "name": "Meredith O'Rourke",
+      "account": "@meremere28",
+      "objectType": "商业/机构",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "Trump竞选财务总监",
+      "organization": "商业/机构",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-white-house",
+      "name": "White House",
+      "account": "@WhiteHouse",
+      "objectType": "商业/机构",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "白宫官方",
+      "organization": "商业/机构",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-presssec45",
+      "name": "PressSec45",
+      "account": "@PressSec45",
+      "objectType": "商业/机构",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "白宫新闻秘书存档；NARA维护",
+      "organization": "商业/机构",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    },
+    {
+      "id": "obj-diamond-and-silk",
+      "name": "Diamond and Silk",
+      "account": "@DiamondandSilk",
+      "objectType": "商业/机构",
+      "layer": "第二层A",
+      "sensitivity": "实名开放",
+      "title": "保守派媒体组合",
+      "organization": "商业/机构",
+      "influence": "低",
+      "anomalyFlags": [],
+      "sourceRefs": [
+        "trump-interaction-circle.html"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "item-001",
+      "objectId": "obj-唐纳德-特朗普",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "紧急",
+      "title": "宣布新一轮对华关税计划",
+      "summary": "发文称将对中国输美商品加征新一轮关税，声称要“保护美国制造业与就业”。",
+      "publishedAt": "2026-08-26 14:32",
+      "source": "Truth Social @realDonaldTrump",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-002",
+      "objectId": "obj-唐纳德-特朗普",
+      "topic": "科技竞争/芯片出口管制",
+      "sentiment": "负面",
+      "riskGrade": "紧急",
+      "title": "扩大对华关键技术限制",
+      "summary": "公开要求进一步收紧对华半导体与AI芯片出口，称要“保持技术领先”。",
+      "publishedAt": "2026-08-25 11:00",
+      "source": "X @realDonaldTrump",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-003",
+      "objectId": "obj-唐纳德-特朗普",
+      "topic": "涉华干涉叙事",
+      "sentiment": "负面",
+      "riskGrade": "高危",
+      "title": "再提所谓“中国影响美国选举”",
+      "summary": "称要彻查所谓“外国势力干预选举”，影射中国但未提供具体证据。",
+      "publishedAt": "2026-08-25 09:10",
+      "source": "X @realDonaldTrump",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-004",
+      "objectId": "obj-唐纳德-特朗普",
+      "topic": "元首外交/高层互动",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "就双边高层沟通表态",
+      "summary": "表示愿与中方保持高层沟通，就经贸等问题交换意见，语气较缓和。",
+      "publishedAt": "2026-08-24 20:00",
+      "source": "X @realDonaldTrump",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-005",
+      "objectId": "obj-马可-鲁比奥",
+      "topic": "科技竞争/芯片出口管制",
+      "sentiment": "负面",
+      "riskGrade": "高危",
+      "title": "推动新一轮对华技术出口管制",
+      "summary": "宣布扩大对华半导体与先进技术出口管制，涉及AI芯片、量子计算等领域。",
+      "publishedAt": "2026-08-26 16:45",
+      "source": "国务院发布会",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-006",
+      "objectId": "obj-马可-鲁比奥",
+      "topic": "南海争端",
+      "sentiment": "负面",
+      "riskGrade": "紧急",
+      "title": "就南海问题发表强硬言论",
+      "summary": "公开指责中方在南海的合法活动，使用“胁迫”“扩张”等对抗性措辞。",
+      "publishedAt": "2026-08-24 15:00",
+      "source": "X @marcorubio",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-007",
+      "objectId": "obj-詹姆斯-戴维-万斯",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "高危",
+      "title": "支持对华加征关税",
+      "summary": "公开支持对华新一轮关税，称要“重塑制造业回流”。",
+      "publishedAt": "2026-08-23 13:20",
+      "source": "X @JDVance",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-008",
+      "objectId": "obj-詹姆斯-戴维-万斯",
+      "topic": "中国经济前景",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "评述中国经济走势",
+      "summary": "表示关注中国经济增速变化，未作极端判断，整体中性。",
+      "publishedAt": "2026-08-22 17:00",
+      "source": "X @JDVance",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-009",
+      "objectId": "obj-战略与国际研究中心-csis-研究员",
+      "topic": "中国经济前景",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "研报评估中国经济韧性",
+      "summary": "研报认为中国经济增长放缓但供应链韧性仍强，未作极端定性。",
+      "publishedAt": "2026-08-25 11:00",
+      "source": "CSIS 报告",
+      "evidence": "source_analysis"
+    },
+    {
+      "id": "item-010",
+      "objectId": "obj-战略与国际研究中心-csis-研究员",
+      "topic": "科技竞争/芯片出口管制",
+      "sentiment": "负面",
+      "riskGrade": "中等",
+      "title": "分析对华芯片管制影响",
+      "summary": "分析称管制在短期内对中国半导体造成压力，但长期将加速自主替代。",
+      "publishedAt": "2026-08-24 10:00",
+      "source": "CSIS 报告",
+      "evidence": "source_analysis"
+    },
+    {
+      "id": "item-011",
+      "objectId": "obj-美中贸易全国委员会会长",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "低危",
+      "title": "呼吁取消对华关税",
+      "summary": "代表美企呼吁取消对华加征关税，称损害美国企业与消费者利益。",
+      "publishedAt": "2026-08-23 09:00",
+      "source": "行业声明",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-012",
+      "objectId": "obj-美中贸易全国委员会会长",
+      "topic": "中美气候合作",
+      "sentiment": "正面",
+      "riskGrade": "无",
+      "title": "支持中美气候合作",
+      "summary": "肯定中美在气候领域的合作有助于全球减排与产业转型。",
+      "publishedAt": "2026-08-22 10:00",
+      "source": "行业论坛",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-013",
+      "objectId": "obj-某跨国企业高管",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "低危",
+      "title": "担忧关税推高成本",
+      "summary": "表示对华加征关税推高供应链成本，呼吁“去风险但非脱钩”。",
+      "publishedAt": "2026-08-24 14:00",
+      "source": "行业论坛",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-014",
+      "objectId": "obj-某跨国企业高管",
+      "topic": "元首外交/高层互动",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "期待中美高层对话",
+      "summary": "表示期待中美高层对话稳定双边经贸预期。",
+      "publishedAt": "2026-08-21 16:00",
+      "source": "行业论坛",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-015",
+      "objectId": "obj-战略与国际研究中心-csis-研究员",
+      "topic": "台海问题",
+      "sentiment": "负面",
+      "riskGrade": "高危",
+      "title": "发布台海风险评估",
+      "summary": "研报渲染台海冲突风险，建议美方加强“威慑”，立场偏美方。",
+      "publishedAt": "2026-08-20 11:00",
+      "source": "CSIS 报告",
+      "evidence": "source_analysis"
+    },
+    {
+      "id": "item-016",
+      "objectId": "obj-cnn",
+      "topic": "台海问题",
+      "sentiment": "负面",
+      "riskGrade": "高危",
+      "title": "专题报道聚焦台海军事态势",
+      "summary": "播出专题报道渲染台海“紧张升级”，采访军方将领，未提供权威实证。",
+      "publishedAt": "2026-08-26 20:00",
+      "source": "CNN",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-017",
+      "objectId": "obj-纽约时报",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "低危",
+      "title": "社论批评中国贸易政策",
+      "summary": "社论以“不公平”等措辞批评中方政策，单方面援引美方立场。",
+      "publishedAt": "2026-08-26 06:00",
+      "source": "纽约时报社论",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-018",
+      "objectId": "obj-纽约时报",
+      "topic": "涉华干涉叙事",
+      "sentiment": "负面",
+      "riskGrade": "中等",
+      "title": "报道所谓“中国影响力”议题",
+      "summary": "报道渲染所谓“中国影响力行动”，多引匿名来源，证据薄弱。",
+      "publishedAt": "2026-08-23 08:00",
+      "source": "纽约时报",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-019",
+      "objectId": "obj-路透社",
+      "topic": "中国经济前景",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "报道中国经济数据",
+      "summary": "报道称三季度增速低于预期，同时指出消费与出口结构有所改善。",
+      "publishedAt": "2026-08-25 15:20",
+      "source": "路透社",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-020",
+      "objectId": "obj-华尔街日报",
+      "topic": "科技竞争/芯片出口管制",
+      "sentiment": "负面",
+      "riskGrade": "中等",
+      "title": "分析对华芯片管制影响",
+      "summary": "分析称对华出口管制“重塑全球半导体供应链”，立场偏美方政策辩护。",
+      "publishedAt": "2026-08-24 18:00",
+      "source": "华尔街日报",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-021",
+      "objectId": "obj-bbc",
+      "topic": "中美气候合作",
+      "sentiment": "正面",
+      "riskGrade": "无",
+      "title": "报道中美气候对话成果",
+      "summary": "报道称中美在气候融资与减排目标上达成阶段性共识，评价偏正面。",
+      "publishedAt": "2026-08-23 10:00",
+      "source": "BBC",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-022",
+      "objectId": "obj-bbc",
+      "topic": "南海争端",
+      "sentiment": "负面",
+      "riskGrade": "低危",
+      "title": "播出南海争端专题纪录片",
+      "summary": "播出关于南海争端的纪录片，采访东南亚多国官员，叙事偏向西方视角。",
+      "publishedAt": "2026-08-02 21:00",
+      "source": "BBC World",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-023",
+      "objectId": "obj-美联社",
+      "topic": "元首外交/高层互动",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "报道中美高层会晤安排",
+      "summary": "客观报道中美高层沟通安排，未作倾向性评论。",
+      "publishedAt": "2026-08-24 12:00",
+      "source": "美联社",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-024",
+      "objectId": "obj-美联社",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "中等",
+      "title": "报道关税对市场的影响",
+      "summary": "报道新一轮关税引发市场震荡，指出美企与消费者同样承压。",
+      "publishedAt": "2026-08-26 15:00",
+      "source": "美联社",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-025",
+      "objectId": "obj-华尔街日报",
+      "topic": "中国经济前景",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "分析中国经济前景",
+      "summary": "分析认为中国经济面临转型压力但中长期基本面仍具韧性。",
+      "publishedAt": "2026-08-21 09:00",
+      "source": "华尔街日报",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-026",
+      "objectId": "obj-涉华评论账号-sinowatch",
+      "topic": "台海问题",
+      "sentiment": "负面",
+      "riskGrade": "紧急",
+      "title": "发布涉台海极端言论",
+      "summary": "大量发布渲染台海冲突的极端内容，粉丝互动活跃，属煽动性叙事。",
+      "publishedAt": "2026-08-26 21:00",
+      "source": "X @Sinowatch",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-027",
+      "objectId": "obj-涉华评论账号-pacificreview",
+      "topic": "南海争端",
+      "sentiment": "负面",
+      "riskGrade": "紧急",
+      "title": "炒作南海议题",
+      "summary": "持续发布涉南海争议的负面内容，将中方合法活动描述为“扩张”。",
+      "publishedAt": "2026-08-25 19:00",
+      "source": "X @PacificReview",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-028",
+      "objectId": "obj-涉华评论账号-techdecouple",
+      "topic": "科技竞争/芯片出口管制",
+      "sentiment": "负面",
+      "riskGrade": "中等",
+      "title": "唱衰中国半导体",
+      "summary": "评论称对华芯片管制“奏效”，夸大中国半导体“受挫”，缺乏一手证据。",
+      "publishedAt": "2026-08-24 17:00",
+      "source": "X @TechDecouple",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-029",
+      "objectId": "obj-涉华评论账号-climateasia",
+      "topic": "中美气候合作",
+      "sentiment": "正面",
+      "riskGrade": "无",
+      "title": "肯定中美气候合作",
+      "summary": "发文肯定中美在气候领域的合作进展，认为对全球减排有利。",
+      "publishedAt": "2026-08-23 09:00",
+      "source": "X @ClimateAsia",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-030",
+      "objectId": "obj-涉华评论账号-sinowatch",
+      "topic": "中国经济前景",
+      "sentiment": "负面",
+      "riskGrade": "中等",
+      "title": "渲染“中国经济崩溃论”",
+      "summary": "转发并放大所谓“崩溃论”，选择性引用数据，属唱衰叙事。",
+      "publishedAt": "2026-08-22 22:00",
+      "source": "X @Sinowatch",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-031",
+      "objectId": "obj-涉华评论账号-sinowatch",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "高危",
+      "title": "唱衰中美贸易战",
+      "summary": "鼓噪对华“全面脱钩”，煽动对抗情绪，缺乏事实依据。",
+      "publishedAt": "2026-08-21 20:00",
+      "source": "X @Sinowatch",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-032",
+      "objectId": "obj-涉华评论账号-pacificreview",
+      "topic": "涉华干涉叙事",
+      "sentiment": "负面",
+      "riskGrade": "紧急",
+      "title": "炒作“中国渗透”论",
+      "summary": "制造并传播所谓“中国渗透西方机构”的阴谋论，内容极端。",
+      "publishedAt": "2026-08-20 21:00",
+      "source": "X @PacificReview",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-033",
+      "objectId": "obj-涉华评论账号-asiainsight",
+      "topic": "元首外交/高层互动",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "客观评述中美高层互动",
+      "summary": "以较中性立场评述中美高层沟通，主张以对话管控分歧。",
+      "publishedAt": "2026-08-24 10:00",
+      "source": "X @AsiaInsight",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-034",
+      "objectId": "obj-涉华评论账号-techdecouple",
+      "topic": "中美贸易/关税",
+      "sentiment": "负面",
+      "riskGrade": "中等",
+      "title": "评论关税对科技链影响",
+      "summary": "评论称关税叠加出口管制扰乱全球科技供应链，但未作极端渲染。",
+      "publishedAt": "2026-08-22 16:00",
+      "source": "X @TechDecouple",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-035",
+      "objectId": "obj-涉华评论账号-asiainsight",
+      "topic": "中国经济前景",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "客观分析中国经济",
+      "summary": "引用多方数据客观分析中国经济，未作唱衰或吹捧。",
+      "publishedAt": "2026-08-21 11:00",
+      "source": "X @AsiaInsight",
+      "evidence": "direct_post_excerpt"
+    },
+    {
+      "id": "item-036",
+      "objectId": "obj-埃里克-特朗普",
+      "topic": "元首外交/高层互动",
+      "sentiment": "中性",
+      "riskGrade": "无",
+      "title": "Eric Trump 随父访华",
+      "summary": "Eric 以个人身份随总统访华团队出行。",
+      "publishedAt": "2026-05",
+      "source": "South China Morning Post",
+      "evidence": "reported_by_source_file"
+    },
+    {
+      "id": "item-037",
+      "objectId": "obj-劳拉-特朗普",
+      "topic": "涉华干涉叙事",
+      "sentiment": "负面",
+      "riskGrade": "高危",
+      "title": "所谓“中国影响美国选举”",
+      "summary": "帖文援引解密文件声称“中国渗透选举”，未提供具体证据。",
+      "publishedAt": "2026-07-22",
+      "source": "X @LaraLeaTrump",
+      "evidence": "direct_post_excerpt"
+    }
+  ]
+}
