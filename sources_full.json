@@ -1,0 +1,88 @@
+{
+  "sources": [
+    {
+      "name": "Washington Post",
+      "claim": "Trump's sons invest heavily in defense tech",
+      "date": "2026-07-13",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "PBS News",
+      "claim": "Tracking the Trump family's business deals and profits in his 2nd term",
+      "date": "2026-04-16",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "Washington Examiner / NY Post",
+      "claim": "Iran threatens Melania and Barron Trump in propaganda video",
+      "date": "2026-07-28",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "Reuters",
+      "claim": "Under the Trump crypto playbook, the family always wins",
+      "date": "2026-06",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "Time Magazine",
+      "claim": "Trump Reports Over $1 Billion in Income From Crypto Ventures",
+      "date": "2026-06",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "People.com",
+      "claim": "Everyone Who Has Married into the Trump Family",
+      "date": "2026-05",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "USA Today",
+      "claim": "What Trump family members will attend the FIFA World Cup Final?",
+      "date": "2026-07",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "ABC News",
+      "claim": "Tiffany Trump gave birth to baby boy / inauguration coverage",
+      "date": "2025-01/05",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "Citizens for Responsibility and Ethics (CREW)",
+      "claim": "Trump sons' foreign meetings",
+      "date": "2026-03",
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "House Oversight Committee Democrats",
+      "claim": "Trump Family Digital Grift Wealth Tracker",
+      "date": null,
+      "url": null,
+      "evidence": "source_list_only"
+    },
+    {
+      "name": "hud.gov",
+      "claim": "Fostering the Future FYI update",
+      "date": "2026-07-28",
+      "url": null,
+      "evidence": "link_domain_only"
+    },
+    {
+      "name": "foxnews.com",
+      "claim": "Melania motion for sanctions against Michael Wolff",
+      "date": "2026-07-23",
+      "url": null,
+      "evidence": "link_domain_only"
+    }
+  ]
+}
