@@ -1,0 +1,24 @@
+[Unit]
+Description=Overseas Opinion Monitor (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+# 改成你实际放置项目的目录和运行用户（不要用 root 直接跑）
+WorkingDirectory=/opt/overseas-opinion-monitor
+User=opinion
+Group=opinion
+# 服务监听本机回环，再由 nginx 反代或直接限制内网访问
+Environment=HOST=127.0.0.1
+Environment=PORT=8000
+Environment=OPINION_MONITOR_DB=/opt/overseas-opinion-monitor/backend/data/opinion_monitor.db
+ExecStart=/opt/overseas-opinion-monitor/start.sh
+Restart=on-failure
+RestartSec=3
+# 可选加固项（按需放开）
+# NoNewPrivileges=true
+# PrivateTmp=true
+# MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target
