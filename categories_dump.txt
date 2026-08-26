@@ -1,0 +1,30 @@
+===== accounts ( 10 ) =====
+  keys: ['id', 'name', 'nameZh', 'handle', 'platform', 'role', 'bio', 'followersRaw', 'followingRaw', 'postsRaw', 'verified', 'joined', 'activity', 'themes', 'evidence', 'sourceRefs']
+  sample: {"id": "x-realDonaldTrump", "name": "Donald J. Trump", "nameZh": "���ɵ¡�������", "handle": "@realDonaldTrump", "platform": "X", "role": "��45/47��������ͳ�������峤", "bio": "45th & 47th President of the United States of America", "followersRaw": "1.1��", "followingRaw": "53", "postsRaw": "5.9��", "verified": true, "
+===== familyMembers ( 14 ) =====
+  keys: ['id', 'name', 'nameZh', 'relation', 'role', 'evidence']
+  sample: {"id": "donald-trump", "name": "Donald Trump", "nameZh": "���ɵ¡�������", "relation": "�峤", "role": "��45/47��������ͳ�������ռ��Ŷ��³�", "evidence": "explicit_source_text"}
+===== profileSignals ( 10 ) =====
+  keys: ['member', 'relation', 'summary', 'tags', 'evidence']
+  sample: {"member": "Donald Trump", "relation": "�����峤����45/47����ͳ", "summary": "2025��1�¾��εڶ����ڣ����潫��2025����˲�����¶�еļ����ʲ�����д������$14�ڣ����ἰ���ʾ��ƺͰ׹����硣", "tags": ["������в", "��������$1.4B", "11���ﱲ"], "evidence": "reported_by_source_file"}
+===== tweets ( 32 ) =====
+  keys: ['account', 'dateText', 'content', 'quotedAccount', 'quotedText', 'stats', 'themes', 'evidence']
+  sample: {"account": "@realDonaldTrump", "dateText": "14Сʱǰ �� 2026��7��28��", "content": "We're going to bring this heroic young man, and his family, into the White House with, perhaps, the boy he saved, to give him a High Civilian Honor. Very brave, he deserves it! President DONALD J. TRUMP", "quotedAccount": 
+===== timeline ( 15 ) =====
+  keys: ['date', 'dateGranularity', 'title', 'summary', 'sources', 'evidence', 'risk']
+  sample: {"date": "2026-07-27/28", "dateGranularity": "day_range", "title": "���ʷ�����ɱ��в��Ƶ��Ŀ��ֱָ Melania �� Barron Trump", "summary": "�����������˹��ķͨѶ��ͨ�� Telegram ������Ϊ How to Kill Melania Trump ��������Ƶ�����ھ��ѽ�����顣", "sources": ["Washington Examiner", "New York Post", "Times of India"], "evidence": "reported_by_source_fil
+===== interactionLayers ( 5 ) =====
+Traceback (most recent call last):
+  keys: ['id', 'rank', 'name', 'countClaimed', 'members', 'interactionMode', 'evidence', 'notes']
+  sample: {"id": "family", "rank": 1, "name": "�������Ȧ", "countClaimed": "5", "members": ["@EricTrump", "@DonaldJTrumpJr", "@IvankaTrump", "@MELANIATRUMP", "@LaraLeaTrump"], "interactionMode": "ת��/����/����", "evidence": "explicit_source_text", "notes": "Eric �������Ϊ��������ó�Ա��7��28�վ���Ա������ 2,678��ۿ���"}
+===== businessAndPolitics ( 8 ) =====
+  keys: ['id', 'title', 'metricRaw', 'actors', 'claims', 'sources', 'evidence', 'risk']
+  sample: {"id": "crypto-income", "title": "Trump Family Crypto Ventures", "metricRaw": "2025�곬��$14������", "actors": ["Donald Trump", "Donald Trump Jr.", "Eric Trump"], "claims": ["WLF����Ŀ��������ơ�ֻӮ���䡯ģʽ���ڲ��������ۻ�����������Ժ�ලίԱ�����"], "sources": ["Time Magazine", "Reuters", "House Oversight Committee Democrats"], "eviden
+===== sources ( 12 ) =====
+  keys: ['name', 'claim', 'date', 'url', 'evidence']
+  sample: {"name": "Washington Post", "claim": "Trump's sons invest heavily in defense tech", "date": "2026-07-13", "url": null, "evidence": "source_list_only"}
+===== themeMatrix ( 9 ) =====
+  keys: ['member', 'topics', 'tone', 'politicization', 'commercial', 'evidence']
+  File "<string>", line 12, in <module>
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f534' in position 116: illegal multibyte sequence
+  sample: 
