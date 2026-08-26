@@ -1,0 +1,252 @@
+[
+  {
+    "id": "family",
+    "rank": 1,
+    "name": "家族核心圈",
+    "countClaimed": "5",
+    "members": [
+      "@EricTrump",
+      "@DonaldJTrumpJr",
+      "@IvankaTrump",
+      "@MELANIATRUMP",
+      "@LaraLeaTrump"
+    ],
+    "interactionMode": "转推/引用/联动",
+    "evidence": "explicit_source_text",
+    "notes": "Eric 被报告标为近期最常引用成员；7月28日救生员联动帖 2,678万观看。"
+  },
+  {
+    "id": "fox",
+    "rank": 2,
+    "name": "Fox News 媒体圈",
+    "countClaimed": "11",
+    "interactionMode": "内容供给+舆论放大",
+    "members": [
+      {
+        "name": "Tucker Carlson",
+        "followersRaw": "1,784万",
+        "role": "前Fox News主播；独立媒体人",
+        "mode": "Trump经常观看并引用评论"
+      },
+      {
+        "name": "Sean Hannity",
+        "followersRaw": "823万",
+        "role": "Fox News 9PM ET；联播电台",
+        "mode": "最亲密媒体盟友，几乎每日互动"
+      },
+      {
+        "name": "Laura Ingraham",
+        "followersRaw": "约500万",
+        "role": "Fox News 7PM ET",
+        "mode": "长期政策盟友"
+      },
+      {
+        "name": "Jeanine Pirro",
+        "followersRaw": "约300万",
+        "role": "The Five；前检察官",
+        "mode": "法律辩护者"
+      },
+      {
+        "name": "Jesse Watters",
+        "followersRaw": "约500万",
+        "role": "Fox Primetime",
+        "mode": "年轻一代Fox主播"
+      },
+      {
+        "name": "Maria Bartiromo",
+        "followersRaw": "约300万",
+        "role": "Fox Business/Fox News",
+        "mode": "经济政策盟友"
+      },
+      {
+        "name": "Lou Dobbs",
+        "followersRaw": "约300万",
+        "role": "前Fox Business主播",
+        "mode": "经济民族主义声音"
+      },
+      {
+        "name": "Bill O'Reilly",
+        "followersRaw": "约400万",
+        "role": "前Fox主播；独立媒体",
+        "mode": "长期媒体战友"
+      },
+      {
+        "name": "FOX & Friends",
+        "followersRaw": "约200万",
+        "role": "Fox早间节目",
+        "mode": "Trump常看的节目"
+      },
+      {
+        "name": "Katrina Campins",
+        "followersRaw": "约50万",
+        "role": "Fox主持人；学徒成员",
+        "mode": "真人秀纽带"
+      },
+      {
+        "name": "Geraldo Rivera",
+        "followersRaw": "约100万",
+        "role": "资深记者；Fox撰稿人",
+        "mode": "亦敌亦友"
+      }
+    ],
+    "evidence": "explicit_source_text"
+  },
+  {
+    "id": "political",
+    "rank": 3,
+    "name": "政治盟友圈",
+    "countClaimed": "9",
+    "interactionMode": "政策协调+策略讨论",
+    "members": [
+      {
+        "name": "Rep. Jim Jordan",
+        "role": "俄亥俄州众议员；司法委员会主席"
+      },
+      {
+        "name": "Elon Musk",
+        "handle": "@elonmusk",
+        "role": "X所有者；DOGE负责人；Tesla/SpaceX CEO"
+      },
+      {
+        "name": "Dan Scavino Jr.",
+        "role": "社交媒体主管；前白宫通讯"
+      },
+      {
+        "name": "Mark Meadows",
+        "role": "前白宫幕僚长"
+      },
+      {
+        "name": "Mike Pence",
+        "role": "第48任副总统"
+      },
+      {
+        "name": "Kevin McCarthy",
+        "role": "第55任众议院议长"
+      },
+      {
+        "name": "Mitch McConnell",
+        "role": "参议院共和党领袖"
+      },
+      {
+        "name": "Kellyanne Conway",
+        "role": "前竞选经理；白宫顾问"
+      },
+      {
+        "name": "Kimberly Guilfoyle",
+        "role": "驻希腊大使；前Fox主播；Don Jr.前未婚妻"
+      }
+    ],
+    "evidence": "explicit_source_text"
+  },
+  {
+    "id": "conservative-kol",
+    "rank": 4,
+    "name": "保守派KOL圈",
+    "countClaimed": "6+",
+    "interactionMode": "间接互动·X推荐",
+    "members": [
+      {
+        "name": "James O'Keefe",
+        "handle": "@JamesOKeefeIII",
+        "followersRaw": "355万",
+        "role": "O'Keefe Media Group CEO；Project Veritas创始人",
+        "relation": "推荐关注；间接互动推断"
+      },
+      {
+        "name": "Joe Rogan",
+        "handle": "@joerogan",
+        "followersRaw": "约2,000万",
+        "role": "JRE播客主持人",
+        "relation": "推荐关注；2024年节目数千万播放"
+      },
+      {
+        "name": "Charlie Kirk",
+        "handle": "@charliekirk11",
+        "followersRaw": "约400万",
+        "role": "TPUSA创始人"
+      },
+      {
+        "name": "Laura Loomer",
+        "handle": "@LauraLoomer",
+        "followersRaw": "约150万",
+        "role": "右翼活动家"
+      },
+      {
+        "name": "Benny Johnson",
+        "handle": "@bennyjohnson",
+        "followersRaw": "约300万",
+        "role": "TPUSA媒体人"
+      },
+      {
+        "name": "Candace Owens",
+        "handle": "@RealCandaceO",
+        "followersRaw": "约500万",
+        "role": "保守派评论家"
+      },
+      {
+        "name": "Dan Bongino",
+        "handle": "@dbongino",
+        "followersRaw": "约300万",
+        "role": "前特勤局特工；评论员"
+      },
+      {
+        "name": "Riley Gaines",
+        "handle": "@Riley_Gaines_",
+        "followersRaw": "约200万",
+        "role": "女权/体育议题活动家；Lara受访"
+      }
+    ],
+    "evidence": "mixed_reported_and_inferred",
+    "notes": "页面标题称6+，正文列出8人；‘推荐关注’不等于Trump实际关注。"
+  },
+  {
+    "id": "business-institution",
+    "rank": 5,
+    "name": "商业/科技/机构圈",
+    "countClaimed": "5",
+    "interactionMode": "官方发布+品牌经营",
+    "members": [
+      {
+        "name": "Elon Musk",
+        "handle": "@elonmusk",
+        "followersRaw": "2.4亿",
+        "role": "X所有者；Tesla/SpaceX CEO；DOGE负责人"
+      },
+      {
+        "name": "WLFI",
+        "handle": "@worldlibertyfi",
+        "followersRaw": "约30万",
+        "role": "特朗普家族加密项目"
+      },
+      {
+        "name": "realtrumpcoins",
+        "handle": "@realtrumpcoins1",
+        "followersRaw": "约5万",
+        "role": "Trump Organization官方伙伴"
+      },
+      {
+        "name": "Meredith O'Rourke",
+        "handle": "@meremere28",
+        "followersRaw": "约5万",
+        "role": "Trump竞选财务总监"
+      },
+      {
+        "name": "White House",
+        "handle": "@WhiteHouse",
+        "role": "白宫官方"
+      },
+      {
+        "name": "PressSec45",
+        "handle": "@PressSec45",
+        "role": "白宫新闻秘书存档；NARA维护"
+      },
+      {
+        "name": "Diamond and Silk",
+        "handle": "@DiamondandSilk",
+        "role": "保守派媒体组合"
+      }
+    ],
+    "evidence": "explicit_source_text",
+    "notes": "商业表列4项，机构表另列3项；总览表写5人，存在去重/计数口径不明。Elon同时出现在政治层。"
+  }
+]
