@@ -1,0 +1,185 @@
+{
+  "themeMatrix": [
+    {
+      "member": "Donald Trump",
+      "topics": [
+        "英雄表彰",
+        "ICE保卫",
+        "Salute to America"
+      ],
+      "tone": "总统·战斗·煽动",
+      "politicization": "🔴🔴🔴🔴🔴",
+      "commercial": "🟡🟡",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Don Jr.",
+      "topics": [
+        "WLF加密",
+        "国防投资",
+        "保守派互动"
+      ],
+      "tone": "商人·战略",
+      "politicization": "🔴🔴🔴🔴",
+      "commercial": "🟡🟡🟡🟡🟡",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Ivanka",
+      "topics": [
+        "AI科技",
+        "世界杯",
+        "家庭",
+        "生日反思"
+      ],
+      "tone": "优雅·内省·社交",
+      "politicization": "🟡",
+      "commercial": "🟡🟡🟡",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Eric",
+      "topics": [
+        "Crypto布道",
+        "反媒体",
+        "爱国叙事"
+      ],
+      "tone": "战斗·激情·喊单",
+      "politicization": "🔴🔴🔴🔴",
+      "commercial": "🟡🟡🟡🟡🟡",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Melania",
+      "topics": [
+        "FYI公益",
+        "法律维权",
+        "寄养儿童"
+      ],
+      "tone": "庄重·矜持",
+      "politicization": "🟡🟡",
+      "commercial": "无",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Lara",
+      "topics": [
+        "反民主党",
+        "文化战",
+        "访谈节目"
+      ],
+      "tone": "激进·好战·媒体化",
+      "politicization": "🔴🔴🔴🔴🔴",
+      "commercial": "🟡🟡🟡🟡",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Tiffany",
+      "topics": [
+        "家庭温情",
+        "旅行",
+        "生子"
+      ],
+      "tone": "温柔·低调",
+      "politicization": "🟡",
+      "commercial": "无",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Kai",
+      "topics": [
+        "UFC",
+        "YouTube Vlog",
+        "音乐节"
+      ],
+      "tone": "Z世代·活泼·非政治",
+      "politicization": "无",
+      "commercial": "🟡🟡",
+      "evidence": "source_analysis"
+    },
+    {
+      "member": "Jared",
+      "topics": [
+        "投资峰会",
+        "中东和平",
+        "赞美妻子"
+      ],
+      "tone": "审慎·外交",
+      "politicization": "🟡🟡🟡",
+      "commercial": "🟡🟡🟡🟡",
+      "evidence": "source_analysis"
+    }
+  ],
+  "inconsistencies": [
+    {
+      "field": "aggregateFollowers",
+      "values": [
+        "X analysis/PPT: 1.4亿+",
+        "按10个账号逐项相加约1.526亿"
+      ],
+      "impact": "dashboard total must be marked as source claim or recalculated; do not present both as exact"
+    },
+    {
+      "field": "independentAccountTotal",
+      "values": [
+        "report.html: 独立账号关注总量约3,730万+",
+        "excluding @realDonaldTrump from listed counts gives约4,259万（or 4,258.8万）"
+      ],
+      "impact": "likely stale/rounding or different account inclusion"
+    },
+    {
+      "field": "fyiStates",
+      "values": [
+        "report.html analysis says 26州",
+        "Melania tweet excerpt says 30州",
+        "FLOTUS analysis says Colorado is第26州"
+      ],
+      "impact": "retain as conflicting claims with dates, do not merge"
+    },
+    {
+      "field": "cryptoMetric",
+      "values": [
+        "$14亿收入",
+        "$23亿获利",
+        "Time source title says >$1B income"
+      ],
+      "impact": "income vs profit vs source headline; separate metrics"
+    },
+    {
+      "field": "interactionCounts",
+      "values": [
+        "ring says商业/科技4人; summary says商业/机构5人; detailed business table4 + institution table3; KOL title6+ but正文8"
+      ],
+      "impact": "use explicit member arrays and show count provenance"
+    },
+    {
+      "field": "dateClaims",
+      "values": [
+        "Reuters timeline event labeled 2026-03; source list labels Reuters Jun 2026",
+        "Washington Post timeline says July 2 weeks ago; source list says Jul 13"
+      ],
+      "impact": "store dateGranularity and source-list date separately"
+    },
+    {
+      "field": "verifiedStatus",
+      "values": [
+        "Kai labeled active/YouTuber rather than verified; FLOTUS labeled official rather than verified"
+      ],
+      "impact": "do not normalize all 10 to verified=true"
+    }
+  ],
+  "missingForProduction": [
+    "每个 X 账号和帖子的 canonical URL、post ID、原始 JSON、抓取时间和时区",
+    "X 平台合规接口返回的真实 follower/following/status counts；当前数字是页面手工样本",
+    "账号认证类型（蓝/金/灰）及认证时间；源文件只写‘已认证’",
+    "帖子发布时间的完整 ISO 时间（多数仅有月/日或相对时间）",
+    "帖子媒体 URL、图片/视频哈希、转推/引用原帖 ID；当前仅有文字描述",
+    "互动边的方向、次数、时间窗、边权重和去重规则；五层圈大部分是作者判断或推荐关注，不是可复算图",
+    "Fox/KOL/政治盟友账号的 handles、canonical URLs 和逐账号抓取证据",
+    "新闻来源文章 URL、作者、标题原文、发布时间、转载关系和全文/摘要证据",
+    "伊朗威胁视频的 Telegram message URL、视频文件哈希、原始语言转写及特勤局官方回应",
+    "商业金额的财务口径、申报文件页码、公司主体和受益人；当前收入/获利叙述混合",
+    "人物出生日期、子女姓名/身份和家庭关系的独立权威来源",
+    "敏感数据访问控制、脱敏策略和审计日志；源文件未提供"
+  ]
+}
