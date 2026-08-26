@@ -1,0 +1,19 @@
+{
+  "name": "overseas-opinion-monitor-workbench",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "backend": ".\\.venv\\Scripts\\python -m uvicorn backend.api:app --host 127.0.0.1 --port 8000"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^6.4.3"
+  }
+}
