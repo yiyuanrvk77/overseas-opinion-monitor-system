@@ -1,0 +1,34 @@
+{
+  "tweets:19": [
+    "tweets",
+    "{\"account\": \"@LaraLeaTrump\", \"dateText\": \"2026年7月22日\", \"content\": \"CENSORING the President of the United States?! Lara reacts to CRAZY videos from around the internet and is joined by @mrddmia and @DennisKneale about the declassified files showing China INFILTRATING our elections, the FBI hiding information from President Trump, Socialists…\", \"stats\": {\"replies\": \"152\", \"reposts\": \"251\", \"likes\": "
+  ],
+  "timeline:5": [
+    "timeline",
+    "{\"date\": \"2026-06\", \"dateGranularity\": \"month\", \"title\": \"Ivanka 和 Jared 阿尔巴尼亚度假村计划遭反对\", \"summary\": \"计划在阿尔巴尼亚亚得里亚海无人岛/海岸线开发豪华度假村，面临环保人士和社区抗议。\", \"sources\": [\"People.com\"], \"evidence\": \"reported_by_source_file\"}"
+  ],
+  "timeline:8": [
+    "timeline",
+    "{\"date\": \"2026-05\", \"dateGranularity\": \"month\", \"title\": \"Eric Trump 随父亲访华\", \"summary\": \"报告称 Eric 以个人身份随总统访华团队出行。\", \"sources\": [\"South China Morning Post\"], \"evidence\": \"reported_by_source_file\"}"
+  ],
+  "timeline:14": [
+    "timeline",
+    "{\"date\": \"2025-01-20\", \"dateGranularity\": \"day\", \"title\": \"特朗普宣誓就任第 47 任总统\", \"summary\": \"报告称子女和孙辈齐聚华盛顿参加就职典礼。\", \"sources\": [\"ABC News\"], \"evidence\": \"reported_by_source_file\"}"
+  ],
+  "businessAndPolitics:2": [
+    "businessAndPolitics",
+    "{\"id\": \"defense-tech\", \"title\": \"国防科技投资\", \"metricRaw\": \"至少10家\", \"actors\": [\"Donald Trump Jr.\", \"Eric Trump\"], \"scope\": [\"无人机\", \"网络安全\"], \"claim\": \"第二任期联邦合同大幅增加\", \"sources\": [\"Washington Post\"], \"evidence\": \"reported_by_source_file\", \"risk\": \"high\"}"
+  ],
+  "businessAndPolitics:4": [
+    "businessAndPolitics",
+    "{\"id\": \"albania-resort\", \"title\": \"阿尔巴尼亚度假村争议\", \"actors\": [\"Ivanka Trump\", \"Jared Kushner\"], \"location\": \"Sazan Island / Zvërnec半岛（源文两种表述）\", \"claim\": \"豪华度假村开发计划面临环保、社区和伦理争议\", \"sources\": [\"People.com\", \"Jared X post 2026-06-02\"], \"evidence\": \"reported_by_source_file\", \"risk\": \"medium\"}"
+  ],
+  "sources:0": [
+    "sources",
+    "{\"name\": \"Washington Post\", \"claim\": \"Trump's sons invest heavily in defense tech\", \"date\": \"2026-07-13\", \"url\": null, \"evidence\": \"source_list_only\"}"
+  ],
+  "profileSignals:4": [
+    "profileSignals",
+    "{\"member\": \"Eric Trump\", \"relation\": \"次子·特朗普集团EVO\", \"summary\": \"报告称与Don Jr.共同管理集团并投资国防/科技；Lara活跃政坛，Eric被列入2028猜测。\", \"tags\": [\"国防科技投资\", \"访华随行\", \"Lara Trump妻\"], \"evidence\": \"reported_by_source_file_plus_speculation\"}"
+  ]
+}
