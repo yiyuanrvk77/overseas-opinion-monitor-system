@@ -1024,6 +1024,22 @@ def review_analysis(analysis_id: str, payload: HumanReviewRequest, request: Requ
         row = conn.execute("SELECT * FROM machine_analysis WHERE id=?", (analysis_id,)).fetchone()
         if not row:
             raise HTTPException(404, "机器研判记录不存在")
+        if row["status"] != MACHINE_CANDIDATE:
+            raise HTTPException(409, "当前记录不是可供人工研判的机器候选")
+        previous_review = conn.execute(
+            "SELECT id FROM human_review WHERE machine_analysis_id=? LIMIT 1",
+            (analysis_id,),
+        ).fetchone()
+        if previous_review:
+            raise HTTPException(409, "该机器候选已经完成人工研判，不能重复提交")
+        if payload.decision == "HUMAN_REVISED" and not any((
+            payload.human_summary.strip(),
+            payload.human_sentiment.strip(),
+            payload.human_stance.strip(),
+            payload.human_risk_level.strip(),
+            payload.evidence_refs,
+        )):
+            raise HTTPException(422, "人工修订必须填写修订后的摘要、标签、风险或证据")
         records = _analysis_records(conn, role=effective_role, record_ids=[str(row["record_id"])])
         if not records:
             raise HTTPException(404, "对应源记录不在当前活动批次或无权访问")

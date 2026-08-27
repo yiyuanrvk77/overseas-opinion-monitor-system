@@ -67,6 +67,11 @@ class AnalysisWorkflowTests(unittest.TestCase):
         )
         self.assertEqual(review.status_code, 200, review.text)
         self.assertEqual(review.json()["review"]["reviewer"], "演示人工研判员")
+        duplicate = self.client.patch(
+            f"/api/analysis/{analysis_id}/review",
+            json={"decision": "HUMAN_CONFIRMED", "review_note": "重复提交", "role": "core"},
+        )
+        self.assertEqual(duplicate.status_code, 409, duplicate.text)
 
     def test_all_human_decisions_and_report_exclusion(self):
         self.client.post("/api/analysis/runs", json={"topic": "APEC 2026", "role": "core"})
@@ -120,6 +125,15 @@ class AnalysisWorkflowTests(unittest.TestCase):
         audit = self.client.get("/api/audit?role=core").json()
         self.assertTrue(audit["chain_verified"])
         self.assertTrue(any(item["action"] == "人工研判决定" for item in audit["items"]))
+
+    def test_revised_decision_requires_revision_fields(self):
+        self.client.post("/api/analysis/runs", json={"topic": "APEC 2026", "role": "core"})
+        analysis_id = self.client.get("/api/analysis/queue?role=core").json()["items"][0]["analysis"]["id"]
+        response = self.client.patch(
+            f"/api/analysis/{analysis_id}/review",
+            json={"decision": "HUMAN_REVISED", "review_note": "已复核", "role": "core"},
+        )
+        self.assertEqual(response.status_code, 422, response.text)
 
 
 if __name__ == "__main__":
