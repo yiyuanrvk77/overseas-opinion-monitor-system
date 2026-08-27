@@ -942,7 +942,13 @@ def analysis_queue(request: Request, role: RoleName = "researcher") -> dict:
         analyses = rows_to_dicts(conn.execute(
             f"""SELECT ma.*,sr.title,sr.summary,sr.evidence_type,sr.source_refs_json,sr.content_hash
                  FROM machine_analysis ma JOIN source_record sr ON sr.id=ma.record_id
-                 WHERE ma.record_id IN ({placeholders}) ORDER BY ma.created_at DESC""", record_ids
+                 WHERE ma.record_id IN ({placeholders})
+                   AND ma.rowid = (
+                       SELECT latest.rowid FROM machine_analysis latest
+                       WHERE latest.record_id=ma.record_id
+                       ORDER BY latest.created_at DESC, latest.rowid DESC LIMIT 1
+                   )
+                 ORDER BY ma.created_at DESC, ma.rowid DESC""", record_ids
         ).fetchall())
         reviews = latest_reviews(conn, [str(item["id"]) for item in analyses])
         all_items = []
@@ -988,8 +994,10 @@ def record_analysis(record_id: str, request: Request, role: RoleName = "research
         records = _analysis_records(conn, role=effective_role, record_ids=[record_id])
         if not records:
             raise HTTPException(404, "记录不存在或当前无权访问")
+        source_record = _json_fields(dict(records[0]), ("content", "source_refs"))
+        content = source_record.get("content") if isinstance(source_record.get("content"), dict) else {}
         rows = rows_to_dicts(conn.execute(
-            "SELECT * FROM machine_analysis WHERE record_id=? ORDER BY created_at DESC", (record_id,)
+            "SELECT * FROM machine_analysis WHERE record_id=? ORDER BY created_at DESC, rowid DESC", (record_id,)
         ).fetchall())
         reviews = latest_reviews(conn, [str(item["id"]) for item in rows])
         rendered = [_analysis_response_view(row, reviews.get(str(row["id"]))) for row in rows]
@@ -999,7 +1007,7 @@ def record_analysis(record_id: str, request: Request, role: RoleName = "research
         if current and current_review and current_review["decision"] in VERIFIED_DECISIONS:
             final_conclusion = {
                 "workflow": current_review["decision"],
-                "summary": current_review.get("narrative") or current.get("narrative") or "",
+                "summary": current_review.get("narrative") or current_review.get("note") or current.get("narrative") or "",
                 "sentiment": current_review.get("sentiment") or current.get("sentiment") or "",
                 "stance": current_review.get("stance") or current.get("stance") or "",
                 "risk_level": current_review.get("risk_level") or current.get("risk_level") or "",
@@ -1007,6 +1015,12 @@ def record_analysis(record_id: str, request: Request, role: RoleName = "research
             }
     return {
         "record_id": record_id,
+        "record": source_record,
+        "source_refs": source_record.get("source_refs") or [],
+        "original_url": content.get("original_url") or content.get("source_url") or "",
+        "published_at": content.get("published_at") or content.get("published_time") or "",
+        "collected_at": content.get("collection_time") or content.get("collected_at") or "",
+        "platform": content.get("platform") or content.get("source") or "",
         "analyses": rendered,
         "current_analysis": current,
         "current_review": current_review,

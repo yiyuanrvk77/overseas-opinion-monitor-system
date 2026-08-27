@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import uuid
 from collections import Counter
 from typing import Any
 
 from .database import now_iso, rows_to_dicts
 
-RULE_ENGINE = "auditable-lexicon-v1"
+RULE_ENGINE = "auditable-lexicon-v2"
 QWEN_ENGINE = "qwen-chat-v1"
 PROMPT_VERSION = "overseas-opinion-analysis-v1"
 MACHINE_CANDIDATE = "MACHINE_CANDIDATE"
@@ -70,13 +71,19 @@ def _snippets(title: str, summary: str) -> list[str]:
     return result[:2]
 
 
+def _contains_term(text: str, term: str) -> bool:
+    """Match English lexicon entries as whole words; retain substring matching for CJK terms."""
+    if any("\u4e00" <= char <= "\u9fff" for char in term):
+        return term in text
+    return re.search(rf"(?<![A-Za-z0-9]){re.escape(term)}(?![A-Za-z0-9])", text, flags=re.IGNORECASE) is not None
+
+
 def _rule_candidate(item: dict[str, Any]) -> dict[str, Any]:
     text = f"{item['title']} {item['summary']}"
-    lower = text.lower()
-    positive = [term for term in _POSITIVE if term in lower]
-    negative = [term for term in _NEGATIVE if term in lower]
-    high = [term for term in _HIGH_RISK if term in lower]
-    medium = [term for term in _MEDIUM_RISK if term in lower]
+    positive = [term for term in _POSITIVE if _contains_term(text, term)]
+    negative = [term for term in _NEGATIVE if _contains_term(text, term)]
+    high = [term for term in _HIGH_RISK if _contains_term(text, term)]
+    medium = [term for term in _MEDIUM_RISK if _contains_term(text, term)]
     if len(positive) > len(negative):
         sentiment = "POSITIVE"
     elif len(negative) > len(positive):
@@ -84,7 +91,7 @@ def _rule_candidate(item: dict[str, Any]) -> dict[str, Any]:
     else:
         sentiment = "NEUTRAL"
     risk_level = "HIGH" if high else ("MEDIUM" if medium else "LOW")
-    themes = [name for name, terms in _THEMES if any(term in lower for term in terms)]
+    themes = [name for name, terms in _THEMES if any(_contains_term(text, term) for term in terms)]
     if not themes:
         themes = ["待人工归类"]
     matched = positive + negative + high + medium

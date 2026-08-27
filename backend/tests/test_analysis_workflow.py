@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from backend import database
 from backend.api import app
+from backend.analysis_workflow import _rule_candidate
 from backend.public_demo import import_public_demo
 
 
@@ -46,12 +47,22 @@ class AnalysisWorkflowTests(unittest.TestCase):
         payload = first.json()
         self.assertEqual(payload["run"]["provider"], "RULE_BASELINE")
         self.assertEqual(payload["run"]["provider_label"], "可审计规则基线")
-        self.assertEqual(payload["run"]["model"], "auditable-lexicon-v1")
+        self.assertEqual(payload["run"]["model"], "auditable-lexicon-v2")
         self.assertGreater(payload["created_count"], 0)
         second = self.client.post("/api/analysis/runs", json={"topic": "APEC 2026", "role": "core"})
         self.assertEqual(second.status_code, 200, second.text)
         self.assertEqual(second.json()["created_count"], 0)
         self.assertEqual(second.json()["skipped_count"], payload["created_count"])
+
+    def test_rule_baseline_uses_word_boundaries(self):
+        candidate = _rule_candidate({
+            "title": "APEC Sees 3.2% Growth in 2026 as Exports Jump, Inflation Accelerates",
+            "summary": "The policy unit forecasts growth while warning about energy costs and concentrated growth risks.",
+            "evidence_type": "explicit_source_text",
+            "source_refs": ["https://example.test/apec"],
+        })
+        self.assertNotIn("war", candidate["keywords"])
+        self.assertEqual(candidate["risk_level"], "LOW")
 
     def test_permissions_and_server_reviewer(self):
         denied = self.client.post("/api/analysis/runs", json={"role": "researcher"})
@@ -119,6 +130,10 @@ class AnalysisWorkflowTests(unittest.TestCase):
         self.assertEqual(detail.status_code, 200, detail.text)
         detail_payload = detail.json()
         self.assertTrue(detail_payload["analyses"])
+        self.assertIn("record", detail_payload)
+        self.assertTrue(detail_payload["source_refs"])
+        self.assertTrue(detail_payload["original_url"])
+        self.assertTrue(detail_payload["collected_at"])
         self.assertEqual(detail_payload["current_review"]["decision"], "HUMAN_REVISED")
         self.assertEqual(detail_payload["final_conclusion"]["summary"], "人工修订后的正式摘要")
         self.assertEqual(detail_payload["current_analysis"]["workflow"], "HUMAN_REVISED")
