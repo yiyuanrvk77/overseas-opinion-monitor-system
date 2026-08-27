@@ -1021,6 +1021,7 @@ def record_analysis(record_id: str, request: Request, role: RoleName = "research
                 "sentiment": current_review.get("sentiment") or current.get("sentiment") or "",
                 "stance": current_review.get("stance") or current.get("stance") or "",
                 "risk_level": current_review.get("risk_level") or current.get("risk_level") or "",
+                "evidence_refs": current_review.get("evidence_refs") or current.get("evidence_refs") or [],
                 "reviewer": current_review.get("reviewer") or "",
             }
     return {
@@ -1048,6 +1049,13 @@ def review_analysis(analysis_id: str, payload: HumanReviewRequest, request: Requ
         row = conn.execute("SELECT * FROM machine_analysis WHERE id=?", (analysis_id,)).fetchone()
         if not row:
             raise HTTPException(404, "机器研判记录不存在")
+        latest_row = conn.execute(
+            """SELECT id FROM machine_analysis WHERE record_id=?
+               ORDER BY created_at DESC, rowid DESC LIMIT 1""",
+            (row["record_id"],),
+        ).fetchone()
+        if not latest_row or latest_row["id"] != analysis_id:
+            raise HTTPException(409, "仅可研判当前最新机器候选")
         if row["status"] != MACHINE_CANDIDATE:
             raise HTTPException(409, "当前记录不是可供人工研判的机器候选")
         previous_review = conn.execute(

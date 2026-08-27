@@ -121,7 +121,9 @@ class AnalysisWorkflowTests(unittest.TestCase):
                 "review_note": "已回到原始链接复核并修订",
                 "human_summary": "人工修订后的正式摘要",
                 "human_sentiment": "NEUTRAL",
+                "human_stance": "NEUTRAL",
                 "human_risk_level": "LOW",
+                "evidence_refs": ["https://example.com/review-evidence"],
                 "role": "core",
             },
         )
@@ -135,7 +137,11 @@ class AnalysisWorkflowTests(unittest.TestCase):
         self.assertTrue(detail_payload["original_url"])
         self.assertTrue(detail_payload["collected_at"])
         self.assertEqual(detail_payload["current_review"]["decision"], "HUMAN_REVISED")
+        self.assertEqual(detail_payload["current_review"]["stance"], "NEUTRAL")
+        self.assertEqual(detail_payload["current_review"]["evidence_refs"], ["https://example.com/review-evidence"])
         self.assertEqual(detail_payload["final_conclusion"]["summary"], "人工修订后的正式摘要")
+        self.assertEqual(detail_payload["final_conclusion"]["stance"], "NEUTRAL")
+        self.assertEqual(detail_payload["final_conclusion"]["evidence_refs"], ["https://example.com/review-evidence"])
         self.assertEqual(detail_payload["current_analysis"]["workflow"], "HUMAN_REVISED")
         audit = self.client.get("/api/audit?role=core").json()
         self.assertTrue(audit["chain_verified"])
@@ -168,7 +174,6 @@ class AnalysisWorkflowTests(unittest.TestCase):
         rerun = self.client.post("/api/analysis/runs", json={"topic": "APEC 2026", "role": "core"})
         self.assertEqual(rerun.status_code, 200, rerun.text)
         self.assertEqual(rerun.json()["created_count"], 1)
-
         latest_queue = self.client.get("/api/analysis/queue?role=core").json()
         self.assertEqual(latest_queue["counts"]["machine_count"], first_queue["counts"]["machine_count"])
         latest_target = next(
@@ -186,6 +191,37 @@ class AnalysisWorkflowTests(unittest.TestCase):
 
         report = self.client.post("/api/reports/generate", json={"template": "topic", "role": "core"}).json()
         self.assertEqual(report["verified_count"], 0)
+
+    def test_stale_unreviewed_machine_version_cannot_be_reviewed(self):
+        self.client.post("/api/analysis/runs", json={"topic": "APEC 2026", "role": "core"})
+        target = self.client.get("/api/analysis/queue?role=core").json()["items"][0]["analysis"]
+        with database.db() as conn:
+            conn.execute(
+                "UPDATE machine_analysis SET model=?,engine_version=? WHERE id=?",
+                ("auditable-lexicon-v1", "auditable-lexicon-v1:overseas-opinion-analysis-v1", target["id"]),
+            )
+
+        rerun = self.client.post("/api/analysis/runs", json={"record_ids": [target["record_id"]], "role": "core"})
+        self.assertEqual(rerun.status_code, 200, rerun.text)
+        self.assertEqual(rerun.json()["created_count"], 1)
+        stale_review = self.client.patch(
+            f"/api/analysis/{target['id']}/review",
+            json={"decision": "HUMAN_CONFIRMED", "review_note": "尝试确认历史版本", "role": "core"},
+        )
+        self.assertEqual(stale_review.status_code, 409, stale_review.text)
+        with database.db() as conn:
+            self.assertIsNone(conn.execute(
+                "SELECT id FROM human_review WHERE machine_analysis_id=?", (target["id"],)
+            ).fetchone())
+        latest = next(
+            item["analysis"] for item in self.client.get("/api/analysis/queue?role=core").json()["items"]
+            if item["analysis"]["record_id"] == target["record_id"]
+        )
+        accepted = self.client.patch(
+            f"/api/analysis/{latest['id']}/review",
+            json={"decision": "HUMAN_CONFIRMED", "review_note": "确认当前机器版本", "role": "core"},
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.text)
 
 
 if __name__ == "__main__":
