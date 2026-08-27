@@ -8,6 +8,7 @@ import logging
 import logging.handlers
 import os
 import secrets
+import uuid
 from collections import Counter
 from pathlib import Path
 from typing import Literal
@@ -33,6 +34,7 @@ from .graph import build_graph
 from .ingest import BATCH_CODE, COLLECTION_ID, batch_summary, index_integrity, ingest_snapshot
 from .public_demo import (
     PUBLIC_BATCH_CODE,
+    TOPIC_SLUGS,
     public_demo_status,
     public_demo_topic,
     public_demo_topics,
@@ -46,6 +48,16 @@ from .classification import overview as classification_overview
 from .vendor import fetch_and_store, list_collected_items, list_vendors
 from .semantic import semantic_engine
 from .agent import qwen_agent
+from .analysis_workflow import (
+    HUMAN_DECISIONS,
+    MACHINE_CANDIDATE,
+    VERIFIED_DECISIONS,
+    analysis_view,
+    latest_reviews,
+    queue_counts,
+    run_machine_analysis,
+    verified_report_summary,
+)
 from .features import pack_vector
 from .semantic import MODELS as SEMANTIC_MODELS
 
@@ -60,6 +72,8 @@ CORE_ONLY_ROUTES = (
     ("PATCH", "/api/collection/tasks/", True),
     ("POST", "/api/collection/fetch", False),
     ("POST", "/api/public-demo/refresh", False),
+    ("POST", "/api/analysis/runs", False),
+    ("PATCH", "/api/analysis/", True),
     ("PATCH", "/api/alerts/", True),
     ("POST", "/api/vectors/rebuild", False),
 )
@@ -182,9 +196,9 @@ class AgentExplainRequest(BaseModel):
 
 
 app = FastAPI(
-    title="社科院海外舆情监测系统 API",
+    title="海外剧情监测系统 API",
     version="1.0.0",
-    description="社科院海外舆情监测系统 API，提供监测对象、舆情数据、知识库、图谱、研判与报告能力。",
+    description="海外剧情监测系统 API，提供监测对象、海外舆情数据、知识库、图谱、研判与报告能力。",
 )
 
 
@@ -282,6 +296,23 @@ class PublicDemoRefreshRequest(BaseModel):
     role: RoleName = "researcher"
 
 
+class AnalysisRunRequest(BaseModel):
+    record_ids: list[str] = Field(default_factory=list, max_length=500)
+    topic: str = Field(default="", max_length=120)
+    role: RoleName = "researcher"
+
+
+class HumanReviewRequest(BaseModel):
+    decision: Literal["HUMAN_CONFIRMED", "HUMAN_REVISED", "HUMAN_REJECTED", "NEEDS_MORE_EVIDENCE"]
+    review_note: str = Field(min_length=2, max_length=2000)
+    human_sentiment: str = Field(default="", max_length=30)
+    human_stance: str = Field(default="", max_length=80)
+    human_risk_level: str = Field(default="", max_length=30)
+    human_summary: str = Field(default="", max_length=2000)
+    evidence_refs: list[str] = Field(default_factory=list, max_length=30)
+    role: RoleName = "researcher"
+
+
 def _json_fields(row: dict, fields: tuple[str, ...]) -> dict:
     for field in fields:
         value = row.pop(f"{field}_json", None)
@@ -304,6 +335,16 @@ def _allowed(role: str) -> tuple[str, ...]:
 def _require_core(role: str) -> None:
     if role != "core":
         raise HTTPException(403, "该操作仅限核心课题组演示角色")
+
+
+def _session_identity(request: Request, requested_role: str, *, kind: str) -> tuple[str, str]:
+    """Resolve actor and role from auth state; demo mode uses explicit demo identities."""
+    authenticated_role = getattr(request.state, "authenticated_role", None)
+    authenticated_user = getattr(request.state, "authenticated_user", None)
+    if authenticated_role:
+        return str(authenticated_user), str(authenticated_role)
+    actor = "演示人工研判员" if kind == "review" else "演示分析操作员"
+    return actor, requested_role
 
 
 def _write_audit(conn, actor: str, action: str, object_type: str, object_id: str, detail: str, outcome: str = "SUCCESS") -> None:
@@ -533,7 +574,7 @@ def dataset_records(
     return {"items": items, "count": len(items), "category_labels": CATEGORY_LABELS}
 
 
-@app.get("/api/records/{record_id:path}")
+@app.get("/api/records/{record_id}")
 def record_detail(record_id: str, role: RoleName = "researcher") -> dict:
     allowed = _allowed(role)
     placeholders = ",".join("?" for _ in allowed)
@@ -751,7 +792,7 @@ def public_demo_refresh(request: PublicDemoRefreshRequest) -> dict:
 
 
 @app.get("/api/analysis")
-def analysis(role: RoleName = "researcher") -> dict:
+def analysis(role: RoleName = "researcher", topic_id: str = "") -> dict:
     records = _record_rows(role=role)
     topics: Counter[str] = Counter()
     evidence: Counter[str] = Counter()
@@ -767,14 +808,28 @@ def analysis(role: RoleName = "researcher") -> dict:
             risks[str(raw["risk"])] += 1
     with db() as conn:
         public_mode = _latest_batch_code(conn) == PUBLIC_BATCH_CODE
+    with db() as conn:
+        topic = TOPIC_SLUGS.get(topic_id, topic_id)
+        record_ids = [str(row["id"]) for row in _analysis_records(conn, role=role, topic=topic)]
+        workflow_counts = queue_counts(conn, record_ids)
+        workflow_report = verified_report_summary(conn, record_ids)
+        analysis_rows = rows_to_dicts(conn.execute(
+            "SELECT id FROM machine_analysis WHERE record_id IN (" + ",".join("?" for _ in record_ids) + ")",
+            record_ids,
+        ).fetchall()) if record_ids else []
+        reviews = latest_reviews(conn, [str(item["id"]) for item in analysis_rows])
+        review_counts = Counter(str(item["decision"]) for item in reviews.values())
+        machine_count = sum(workflow_counts.values())
     return {
         "topics": [{"name": name, "count": count} for name, count in topics.most_common(18)],
         "evidence": [{"type": name, "count": count} for name, count in evidence.most_common()],
         "risks": [{"level": name, "count": count} for name, count in risks.most_common()],
         "sentiment": {
-            "status": "NOT_RUN",
+            "status": "MACHINE_CANDIDATES" if machine_count else "NOT_RUN",
             "reason": (
-                "公开网页样本尚未运行经评测的情感模型；本版不把媒体表述自动包装成情感结论。"
+                "已生成可审计机器候选，正式结论仍须人工确认；当前未配置经评测的大模型时使用规则基线。"
+                if machine_count and public_mode
+                else "公开网页样本尚未运行机器分析；本版不把媒体表述自动包装成情感结论。"
                 if public_mode
                 else "ZIP 未提供人工情感真值；本版不将源文件作者语气判断伪装成模型结论。"
             ),
@@ -784,6 +839,215 @@ def analysis(role: RoleName = "researcher") -> dict:
             if public_mode
             else "主题统计来自源文件标签，仍需结合原始帖子和正式模型复核。"
         ),
+        "workflow": {
+            "machine_status_counts": workflow_counts,
+            "machine_count": machine_count,
+            "pending_human_review": max(0, machine_count - len(reviews)),
+            "human_confirmed": review_counts.get("HUMAN_CONFIRMED", 0) + review_counts.get("HUMAN_REVISED", 0),
+            "verified_count": workflow_report["verified_count"],
+            "excluded_count": workflow_report["excluded_count"],
+            "policy": "机器结果仅为候选；正式研判仅纳入 HUMAN_CONFIRMED 或 HUMAN_REVISED。",
+        },
+    }
+
+
+def _analysis_records(conn, *, role: str, record_ids: list[str] | None = None, topic: str = "") -> list[dict]:
+    current_batch_id = _latest_batch_id(conn)
+    if not current_batch_id:
+        return []
+    allowed = _allowed(role)
+    placeholders = ",".join("?" for _ in allowed)
+    rows = rows_to_dicts(conn.execute(
+        f"""SELECT * FROM source_record WHERE batch_id=? AND sensitivity IN ({placeholders})
+               ORDER BY id""",
+        (current_batch_id, *allowed),
+    ).fetchall())
+    requested = {value for value in (record_ids or []) if value}
+    topic_value = topic.strip().lower()
+    selected = []
+    for row in rows:
+        if requested and str(row["id"]) not in requested:
+            continue
+        if topic_value:
+            content = json.loads(row["content_json"])
+            labels = [str(content.get(key) or "") for key in ("topic", "themes", "keywords")]
+            if not any(topic_value in label.lower() for label in labels):
+                continue
+        selected.append(row)
+    return selected
+
+
+def _analysis_response_view(row: dict, review: dict | None = None) -> dict:
+    viewed = analysis_view(dict(row))
+    status = str(viewed.get("status") or "")
+    workflow = str(review.get("decision")) if review else (
+        "PENDING_HUMAN_REVIEW" if status == MACHINE_CANDIDATE else status
+    )
+    viewed.update({
+        "workflow": workflow,
+        "machine_reason": viewed.get("narrative", ""),
+        "machine_sentiment": viewed.get("sentiment", ""),
+        "machine_stance": viewed.get("stance", ""),
+        "machine_risk_level": viewed.get("risk_level", ""),
+        "evidence_snippet": (viewed.get("evidence_snippets") or [""])[0],
+        "review": review,
+    })
+    return viewed
+
+
+@app.post("/api/analysis/runs")
+def create_analysis_run(payload: AnalysisRunRequest, request: Request) -> dict:
+    actor, effective_role = _session_identity(request, payload.role, kind="run")
+    _require_core(effective_role)
+    with db() as conn:
+        resolved_topic = TOPIC_SLUGS.get(payload.topic, payload.topic)
+        records = _analysis_records(conn, role=effective_role, record_ids=payload.record_ids, topic=resolved_topic)
+        if not records:
+            raise HTTPException(404, "当前活动批次中没有匹配的可分析记录")
+        scope = ({"type": "records", "record_ids": payload.record_ids} if payload.record_ids else {"type": "topic", "topic": resolved_topic, "topic_id": payload.topic} if payload.topic else {"type": "active_batch"})
+        result = run_machine_analysis(conn, records, actor=actor, agent=qwen_agent, scope=scope)
+        run = rows_to_dicts(conn.execute("SELECT * FROM analysis_run WHERE id=?", (result["run_id"],)).fetchall())[0]
+        parameters = json.loads(run.get("parameters_json") or "{}")
+        run["scope"] = parameters.get("scope", {})
+        run["topic_name"] = run["scope"].get("topic", "")
+        _write_audit(
+            conn, actor, "运行机器研判", "analysis_run", result["run_id"],
+            f"引擎={result['engine']['engine_version']}；新建={result['created_count']}；幂等跳过={result['skipped_count']}；失败={result['failed_count']}",
+            "SUCCESS" if not result["failures"] else "PARTIAL",
+        )
+    return {"run": run, "analyses": result["created"], **{key: value for key, value in result.items() if key not in {"run_id", "created"}}}
+
+
+@app.get("/api/analysis/runs")
+def analysis_runs(request: Request, role: RoleName = "researcher") -> dict:
+    _, effective_role = _session_identity(request, role, kind="run")
+    with db() as conn:
+        rows = rows_to_dicts(conn.execute("SELECT * FROM analysis_run ORDER BY started_at DESC,id DESC LIMIT 200").fetchall())
+        for row in rows:
+            parameters = json.loads(row.get("parameters_json") or "{}")
+            row["scope"] = parameters.get("scope", {})
+            row["topic_name"] = row["scope"].get("topic", "")
+    return {"runs": rows, "count": len(rows), "role": effective_role}
+
+
+@app.get("/api/analysis/queue")
+def analysis_queue(request: Request, role: RoleName = "researcher") -> dict:
+    _, effective_role = _session_identity(request, role, kind="review")
+    with db() as conn:
+        records = _analysis_records(conn, role=effective_role)
+        record_ids = [str(item["id"]) for item in records]
+        if not record_ids:
+            return {"items": [], "counts": {}}
+        placeholders = ",".join("?" for _ in record_ids)
+        analyses = rows_to_dicts(conn.execute(
+            f"""SELECT ma.*,sr.title,sr.summary,sr.evidence_type,sr.source_refs_json,sr.content_hash
+                 FROM machine_analysis ma JOIN source_record sr ON sr.id=ma.record_id
+                 WHERE ma.record_id IN ({placeholders}) ORDER BY ma.created_at DESC""", record_ids
+        ).fetchall())
+        reviews = latest_reviews(conn, [str(item["id"]) for item in analyses])
+        all_items = []
+        pending_items = []
+        reviewed_items = []
+        for item in analyses:
+            original_record_id = item["record_id"]
+            record = {
+                "id": item.pop("record_id"), "title": item.pop("title"), "summary": item.pop("summary"),
+                "evidence_type": item.pop("evidence_type"), "content_hash": item.pop("content_hash"),
+                "source_refs": json.loads(item.pop("source_refs_json") or "[]"),
+            }
+            analysis_id = str(item["id"])
+            review = reviews.get(analysis_id)
+            viewed = _analysis_response_view(item, review)
+            viewed["record_id"] = original_record_id
+            entry = {"analysis": viewed, "record": record, "review": review}
+            all_items.append(entry)
+            if viewed["workflow"] == "PENDING_HUMAN_REVIEW":
+                pending_items.append(entry)
+            else:
+                reviewed_items.append(entry)
+        decision_counts = Counter(
+            str(entry["review"]["decision"]) for entry in reviewed_items if entry["review"]
+        )
+        counts = {
+            "machine_count": len(all_items),
+            "pending_human_review": len(pending_items),
+            "human_confirmed": decision_counts.get("HUMAN_CONFIRMED", 0),
+            "human_revised": decision_counts.get("HUMAN_REVISED", 0),
+            "human_rejected": decision_counts.get("HUMAN_REJECTED", 0),
+            "needs_more_evidence": decision_counts.get("NEEDS_MORE_EVIDENCE", 0),
+            "verified_count": decision_counts.get("HUMAN_CONFIRMED", 0) + decision_counts.get("HUMAN_REVISED", 0),
+            "excluded_count": len(pending_items) + decision_counts.get("HUMAN_REJECTED", 0) + decision_counts.get("NEEDS_MORE_EVIDENCE", 0),
+        }
+        return {"items": pending_items, "analyses": all_items, "reviewed_items": reviewed_items, "counts": counts}
+
+
+@app.get("/api/records/{record_id}/analysis")
+def record_analysis(record_id: str, request: Request, role: RoleName = "researcher") -> dict:
+    _, effective_role = _session_identity(request, role, kind="review")
+    with db() as conn:
+        records = _analysis_records(conn, role=effective_role, record_ids=[record_id])
+        if not records:
+            raise HTTPException(404, "记录不存在或当前无权访问")
+        rows = rows_to_dicts(conn.execute(
+            "SELECT * FROM machine_analysis WHERE record_id=? ORDER BY created_at DESC", (record_id,)
+        ).fetchall())
+        reviews = latest_reviews(conn, [str(item["id"]) for item in rows])
+        rendered = [_analysis_response_view(row, reviews.get(str(row["id"]))) for row in rows]
+        current = rendered[0] if rendered else None
+        current_review = current.get("review") if current else None
+        final_conclusion = None
+        if current and current_review and current_review["decision"] in VERIFIED_DECISIONS:
+            final_conclusion = {
+                "workflow": current_review["decision"],
+                "summary": current_review.get("narrative") or current.get("narrative") or "",
+                "sentiment": current_review.get("sentiment") or current.get("sentiment") or "",
+                "stance": current_review.get("stance") or current.get("stance") or "",
+                "risk_level": current_review.get("risk_level") or current.get("risk_level") or "",
+                "reviewer": current_review.get("reviewer") or "",
+            }
+    return {
+        "record_id": record_id,
+        "analyses": rendered,
+        "current_analysis": current,
+        "current_review": current_review,
+        "final_conclusion": final_conclusion,
+    }
+
+
+@app.patch("/api/analysis/{analysis_id}/review")
+def review_analysis(analysis_id: str, payload: HumanReviewRequest, request: Request) -> dict:
+    actor, effective_role = _session_identity(request, payload.role, kind="review")
+    _require_core(effective_role)
+    if payload.decision not in HUMAN_DECISIONS:
+        raise HTTPException(422, "不支持的人工研判决定")
+    with db() as conn:
+        row = conn.execute("SELECT * FROM machine_analysis WHERE id=?", (analysis_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "机器研判记录不存在")
+        records = _analysis_records(conn, role=effective_role, record_ids=[str(row["record_id"])])
+        if not records:
+            raise HTTPException(404, "对应源记录不在当前活动批次或无权访问")
+        timestamp = now_iso()
+        review_id = f"hr:{uuid.uuid4().hex}"
+        conn.execute(
+            """INSERT INTO human_review
+               (id,machine_analysis_id,record_id,reviewer,decision,sentiment,stance,risk_level,narrative,evidence_refs_json,note,created_at,updated_at)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (review_id, analysis_id, row["record_id"], actor, payload.decision, payload.human_sentiment,
+             payload.human_stance, payload.human_risk_level, payload.human_summary, json.dumps(payload.evidence_refs, ensure_ascii=False),
+             payload.review_note, timestamp, timestamp),
+        )
+        _write_audit(
+            conn, actor, "人工研判决定", "machine_analysis", analysis_id,
+            f"决定={payload.decision}；审核记录={review_id}", "SUCCESS",
+        )
+        review = rows_to_dicts(conn.execute("SELECT * FROM human_review WHERE id=?", (review_id,)).fetchall())[0]
+        review["evidence_refs"] = json.loads(review.pop("evidence_refs_json") or "[]")
+    return {
+        "analysis_id": analysis_id,
+        "workflow": payload.decision,
+        "review": review,
+        "verified": payload.decision in VERIFIED_DECISIONS,
     }
 
 
@@ -989,6 +1253,11 @@ def generate_report(request: ReportRequest) -> dict:
                   ORDER BY qi.severity DESC,qi.id LIMIT 8""",
             (current_batch_id, *allowed),
         ).fetchall())
+        visible_record_ids = [str(row["id"]) for row in conn.execute(
+            f"SELECT id FROM source_record WHERE batch_id=? AND sensitivity IN ({placeholders})",
+            (current_batch_id, *allowed),
+        ).fetchall()]
+        workflow_summary = verified_report_summary(conn, visible_record_ids)
     analysis_payload = analysis(request.role)
     citations = []
     if request.focus.strip():
@@ -999,7 +1268,22 @@ def generate_report(request: ReportRequest) -> dict:
         {"title": "结构化概况", "content": f"共 {batch.get('record_count', 0)} 条记录、{len(batch.get('category_counts', {}))} 类数据；分类统计为 {json.dumps(batch.get('category_counts', {}), ensure_ascii=False)}。"},
         {"title": "主要主题", "content": "、".join(f"{item['name']}（{item['count']}）" for item in analysis_payload["topics"][:8]) or "未形成可用主题统计。"},
         {"title": "质量边界", "content": f"当前有 {batch.get('quality_issue_count', 0)} 项口径冲突或生产缺口，均保持待处理状态，未自动补全。"},
+        {
+            "title": "正式研判纳入规则",
+            "content": (
+                f"已纳入 {workflow_summary['verified_count']} 条人工确认或修订的研判；"
+                f"排除 {workflow_summary['excluded_count']} 条未获人工确认、被驳回或待补证的机器候选。"
+            ),
+        },
     ]
+    if workflow_summary["items"]:
+        sections.append({
+            "title": "已核验研判摘要",
+            "content": "；".join(
+                f"{item['record_id']}（{item['decision']}，{item['risk_level']}）：{item['narrative']}"
+                for item in workflow_summary["items"][:5]
+            ),
+        })
     if request.focus.strip():
         sections.append({"title": f"检索焦点：{request.focus}", "content": "；".join(item["summary"] for item in citations[:4]) or "未检索到相关记录。"})
     return {
@@ -1009,8 +1293,11 @@ def generate_report(request: ReportRequest) -> dict:
         "sections": sections,
         "quality_items": quality_items,
         "citations": citations,
+        "analysis_workflow": workflow_summary,
+        "verified_count": workflow_summary["verified_count"],
+        "excluded_count": workflow_summary["excluded_count"],
         "status": "GENERATED_FROM_PUBLIC_WEB_SAMPLE" if batch.get("code") == PUBLIC_BATCH_CODE else "GENERATED_FROM_TEST_BATCH",
-        "notice": "报告由结构化规则生成，引用与证据性质随结果返回；未调用生成式大模型。",
+        "notice": "报告主体由结构化规则生成，未调用生成式大模型；机器候选不作为正式研判结论，已核验结论须由人工确认或修订。",
     }
 
 

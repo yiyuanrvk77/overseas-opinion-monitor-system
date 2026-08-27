@@ -247,6 +247,71 @@ CREATE TABLE IF NOT EXISTS collected_item (
     raw_json TEXT NOT NULL DEFAULT '{}',
     UNIQUE(vendor, vendor_item_id)
 );
+
+CREATE TABLE IF NOT EXISTS analysis_run (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    provider_label TEXT NOT NULL,
+    model TEXT NOT NULL,
+    engine_version TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    parameters_json TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL,
+    input_count INTEGER NOT NULL DEFAULT 0,
+    success_count INTEGER NOT NULL DEFAULT 0,
+    failed_count INTEGER NOT NULL DEFAULT 0,
+    input_hash TEXT NOT NULL,
+    output_hash TEXT NOT NULL DEFAULT '',
+    error TEXT NOT NULL DEFAULT '',
+    created_by TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS machine_analysis (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL REFERENCES analysis_run(id),
+    record_id TEXT NOT NULL,
+    source_content_hash TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    provider_label TEXT NOT NULL,
+    model TEXT NOT NULL,
+    engine_version TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    status TEXT NOT NULL,
+    sentiment TEXT NOT NULL,
+    stance TEXT NOT NULL,
+    risk_level TEXT NOT NULL,
+    themes_json TEXT NOT NULL DEFAULT '[]',
+    keywords_json TEXT NOT NULL DEFAULT '[]',
+    narrative TEXT NOT NULL DEFAULT '',
+    confidence REAL NOT NULL DEFAULT 0,
+    uncertainty TEXT NOT NULL DEFAULT '',
+    evidence_snippets_json TEXT NOT NULL DEFAULT '[]',
+    evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+    input_hash TEXT NOT NULL,
+    output_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(record_id, source_content_hash, engine_version)
+);
+CREATE INDEX IF NOT EXISTS idx_machine_analysis_record ON machine_analysis(record_id, created_at);
+
+CREATE TABLE IF NOT EXISTS human_review (
+    id TEXT PRIMARY KEY,
+    machine_analysis_id TEXT NOT NULL REFERENCES machine_analysis(id),
+    record_id TEXT NOT NULL,
+    reviewer TEXT NOT NULL,
+    decision TEXT NOT NULL,
+    sentiment TEXT NOT NULL DEFAULT '',
+    stance TEXT NOT NULL DEFAULT '',
+    risk_level TEXT NOT NULL DEFAULT '',
+    narrative TEXT NOT NULL DEFAULT '',
+    evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_human_review_analysis ON human_review(machine_analysis_id, updated_at);
 """
 
 

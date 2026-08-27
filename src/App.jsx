@@ -5,31 +5,27 @@ import {
   CircleDot, FileArchive, FileCheck2, FileSearch, FileStack, FileText, Fingerprint,
   ExternalLink, Globe2, HardDrive, Info, Languages, Layers3, LayoutDashboard, Library, LockKeyhole, MapPin, Menu,
   MessageSquareText, Network, PanelLeftClose, RefreshCw, Search, Send, Server,
-  Share2, SlidersHorizontal, Target, TestTube2, UploadCloud,
+  Share2, SlidersHorizontal, Target, TestTube2, UploadCloud, MoreHorizontal,
   UserRound, Users, X,
 } from 'lucide-react'
 import { api } from './api.js'
 
 const NAV_GROUPS = [
-  { label: '运行总览', items: [{ id: 'overview', label: '系统概览', icon: LayoutDashboard }] },
-  { label: '监测与数据', items: [
-    { id: 'targets', label: '监测对象', icon: Users },
-    { id: 'collection', label: '采集与批次', icon: Database },
+  { label: '核心工作', items: [
+    { id: 'overview', label: '总览', icon: LayoutDashboard },
     { id: 'topics', label: '重点专题', icon: Target },
-  ] },
-  { label: '知识与研判', items: [
-    { id: 'knowledge', label: '嵌入式知识库', icon: Library },
-    { id: 'graph', label: '知识图谱', icon: Share2 },
+    { id: 'knowledge', label: '全局搜索', icon: Search },
+    { id: 'targets', label: '监测对象', icon: Users },
     { id: 'analysis', label: '分析研判', icon: SlidersHorizontal },
-    { id: 'alerts', label: '风险线索', icon: BellRing },
+    { id: 'reports', label: '报告中心', icon: FileText },
   ] },
-  { label: '分类监测', items: [
+  { label: '研究工具', items: [
+    { id: 'collection', label: '采集与批次', icon: Database },
+    { id: 'graph', label: '知识图谱', icon: Share2 },
+    { id: 'alerts', label: '风险线索', icon: BellRing },
+    { id: 'chat', label: '检索式问答', icon: MessageSquareText },
     { id: 'objects', label: '对象分层', icon: Users },
     { id: 'opinion', label: '舆情分析', icon: SlidersHorizontal },
-  ] },
-  { label: '输出与治理', items: [
-    { id: 'reports', label: '报告中心', icon: FileText },
-    { id: 'chat', label: '检索式问答', icon: MessageSquareText },
   ] },
 ]
 
@@ -136,15 +132,20 @@ function statusLabel(status) {
     TEST_READY: '测试就绪', COMPLETED: '已完成', VALIDATED: '已验证', IMPLEMENTED: '已实现',
     SCAFFOLDED: '已搭建', PARTIAL: '部分实现', NOT_CONFIGURED: '未配置', NOT_RUN: '未运行',
     SAMPLE_READY: '样本可用', PUBLIC_READY: '公开样本可用', AUTH_REQUIRED: '需官方授权', PUBLIC_SAMPLE: '公开样本',
+    PUBLIC_READABLE: '公开可读', ACCESS_RESTRICTED: '访问受限', FAILED: '访问失败',
     DRAFT: '草稿', PAUSED: '已暂停', ARCHIVED: '已归档', PENDING: '待处理',
     ACKNOWLEDGED: '已确认', RESOLVED: '已完成', PENDING_VERIFICATION: '待核验', OPEN: '待处理', SUCCESS: '成功',
+    QUEUED: '排队中', RUNNING: '运行中', FINISHED: '已完成', COMPLETED_WITH_ERRORS: '部分完成',
+    MACHINE_PENDING: '待机器判定', MACHINE_COMPLETED: '机器已判定', MACHINE_CANDIDATE: '机器候选', PENDING_HUMAN_REVIEW: '待人工研判',
+    HUMAN_CONFIRMED: '人工确认', HUMAN_REVISED: '人工修订', HUMAN_REJECTED: '人工驳回',
+    NEEDS_MORE_EVIDENCE: '待补充证据', EXCLUDED: '已排除', FINALIZED: '最终结论已形成',
   })[status] || status || '未标注'
 }
 
 function statusTone(status) {
-  if (['TEST_READY', 'COMPLETED', 'VALIDATED', 'IMPLEMENTED', 'SUCCESS', 'ACKNOWLEDGED', 'RESOLVED'].includes(status)) return 'success'
-  if (['OPEN', 'PENDING', 'PENDING_VERIFICATION', 'PARTIAL', 'PAUSED'].includes(status)) return 'warning'
-  if (['HIGH', 'ERROR', 'FAILED'].includes(status)) return 'danger'
+  if (['TEST_READY', 'COMPLETED', 'FINISHED', 'VALIDATED', 'IMPLEMENTED', 'SUCCESS', 'ACKNOWLEDGED', 'RESOLVED', 'HUMAN_CONFIRMED', 'HUMAN_REVISED', 'FINALIZED'].includes(status)) return 'success'
+  if (['OPEN', 'PENDING', 'QUEUED', 'RUNNING', 'MACHINE_PENDING', 'MACHINE_COMPLETED', 'MACHINE_CANDIDATE', 'PENDING_HUMAN_REVIEW', 'PENDING_VERIFICATION', 'NEEDS_MORE_EVIDENCE', 'PARTIAL', 'PAUSED', 'COMPLETED_WITH_ERRORS'].includes(status)) return 'warning'
+  if (['HIGH', 'ERROR', 'FAILED', 'HUMAN_REJECTED', 'EXCLUDED'].includes(status)) return 'danger'
   return 'neutral'
 }
 
@@ -162,18 +163,18 @@ function App() {
     targets: <TargetsPage role={role} />,
     collection: <CollectionPage role={role} />,
     topics: <TopicsPage role={role} params={params} navigate={navigate} />,
-    knowledge: <KnowledgePage role={role} initialQuery={params.get('q') || ''} />,
+    knowledge: <KnowledgePage role={role} initialQuery={params.get('q') || ''} navigate={navigate} />,
     graph: <GraphPage role={role} />,
     analysis: <AnalysisPage role={role} />,
     alerts: <AlertsPage role={role} />,
     objects: <ObjectsPage role={role} />,
     opinion: <OpinionPage role={role} />,
-    reports: <ReportsPage role={role} />,
+    reports: <ReportsPage role={role} initialFocus={params.get('focus') || ''} />,
     chat: <ChatPage role={role} />,
   }
   return (
     <div className="app-shell">
-      <Sidebar route={route} navigate={navigate} open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <Sidebar route={route} navigate={navigate} open={mobileOpen} onOpen={() => setMobileOpen(true)} onClose={() => setMobileOpen(false)} />
       {mobileOpen && <button className="mobile-scrim" aria-label="关闭导航" onClick={() => setMobileOpen(false)} />}
       <div className="workspace">
         <Topbar route={route} role={role} setRole={setRole} navigate={navigate} onMenu={() => setMobileOpen(true)} health={health} />
@@ -183,29 +184,33 @@ function App() {
   )
 }
 
-function Sidebar({ route, navigate, open, onClose }) {
+function Sidebar({ route, navigate, open, onOpen, onClose }) {
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const primaryItems = NAV_GROUPS[0].items
+  const toolItems = NAV_GROUPS[1].items
+  useEffect(() => setToolsOpen(false), [route])
+  const go = (id) => { navigate(id); setToolsOpen(false); onClose() }
   return (
     <aside className={`sidebar ${open ? 'is-open' : ''}`}>
       <div className="brand">
-        <div className="brand-mark"><Target size={20} strokeWidth={2.2} /></div>
-        <div className="brand-copy"><strong>海外舆情监测</strong><span>研究工作台</span></div>
-        <button className="icon-btn sidebar-close" aria-label="关闭导航" onClick={onClose}><X size={18} /></button>
+        <div className="brand-copy"><strong>海外剧情监测系统</strong><span>OVERSEAS MONITOR</span></div>
       </div>
-      <nav className="side-nav" aria-label="主导航">
-        {NAV_GROUPS.map((group) => (
-          <div className="nav-group" key={group.label}>
-            <div className="nav-group-label">{group.label}</div>
-            {group.items.map((item) => {
-              const Icon = item.icon
-              return <button key={item.id} className={`nav-link ${route === item.id ? 'active' : ''}`} onClick={() => navigate(item.id)}><Icon size={17} /><span>{item.label}</span>{route === item.id && <ChevronRight size={15} className="nav-chevron" />}</button>
-            })}
-          </div>
-        ))}
+      <nav className="desktop-nav" aria-label="主导航">
+        {primaryItems.map((item) => {
+          const Icon = item.icon
+          return <button key={item.id} className={`nav-link ${route === item.id ? 'active' : ''}`} onClick={() => go(item.id)}><Icon size={16} /><span>{item.label}</span></button>
+        })}
+        <div className="tool-menu">
+          <button className={`nav-link nav-more ${toolItems.some((item) => item.id === route) ? 'active' : ''}`} aria-expanded={toolsOpen} onClick={() => setToolsOpen((value) => !value)}><MoreHorizontal size={17} /><span>研究工具</span><ChevronDown size={14} /></button>
+          {toolsOpen && <div className="tool-popover">{toolItems.map((item) => { const Icon = item.icon; return <button key={item.id} className={route === item.id ? 'active' : ''} onClick={() => go(item.id)}><Icon size={17} /><span>{item.label}</span><ChevronRight size={14} /></button> })}</div>}
+        </div>
       </nav>
-      <div className="sidebar-footer">
-        <div className="local-mode"><HardDrive size={17} /><div><strong>本地化运行</strong><span>数据不出域 · 操作留痕</span></div></div>
-        <div className="version-line">产品验证版 V1.0</div>
-      </div>
+      <button className="icon-btn mobile-nav-trigger" aria-label="打开导航" onClick={open ? onClose : onOpen}><Menu size={20} /></button>
+      <nav className="mobile-nav" aria-label="移动端导航">
+        <div className="mobile-nav-head"><strong>功能导航</strong><button className="icon-btn sidebar-close" aria-label="关闭导航" onClick={onClose}><X size={18} /></button></div>
+        {NAV_GROUPS.map((group) => <div className="nav-group" key={group.label}><div className="nav-group-label">{group.label}</div>{group.items.map((item) => { const Icon = item.icon; return <button key={item.id} className={`nav-link ${route === item.id ? 'active' : ''}`} onClick={() => go(item.id)}><Icon size={17} /><span>{item.label}</span><ChevronRight size={15} /></button> })}</div>)}
+        <div className="sidebar-footer"><div className="local-mode"><HardDrive size={17} /><div><strong>本地化运行</strong><span>数据不出域 · 操作留痕</span></div></div></div>
+      </nav>
     </aside>
   )
 }
@@ -215,8 +220,8 @@ function Topbar({ route, role, setRole, navigate, onMenu, health }) {
   const submit = (event) => { event.preventDefault(); if (query.trim()) navigate('knowledge', { q: query.trim() }) }
   return (
     <header className="topbar">
-      <div className="topbar-left"><button className="icon-btn menu-btn" aria-label="打开导航" onClick={onMenu}><Menu size={20} /></button><div className="route-title"><span>海外舆情监测系统</span><strong>{ROUTE_META[route]?.label}</strong></div></div>
-      <form className="global-search" onSubmit={submit}><Search size={17} /><input aria-label="全局知识检索" maxLength="500" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="检索当前知识库…" /><button type="submit" aria-label="开始检索"><ArrowRight size={16} /></button></form>
+      <div className="topbar-left"><button className="icon-btn menu-btn" aria-label="打开导航" onClick={onMenu}><Menu size={20} /></button><div className="route-title"><span>当前工作区</span><strong>{ROUTE_META[route]?.label}</strong></div></div>
+      <form className="global-search" onSubmit={submit}><Search size={17} /><input aria-label="全局知识检索" maxLength="500" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索人物、国家、机构、事件或关键词" /><button type="submit" aria-label="开始检索"><ArrowRight size={16} /></button></form>
       <div className="topbar-actions">
         <div className={`service-state ${health.error ? 'offline' : health.loading ? 'checking' : 'online'}`} title={health.error || '后端服务状态'}><span /><span className="service-copy">{health.error ? '服务未连接' : health.loading ? '检查中' : '本地服务可用'}</span></div>
         <label className="role-select"><UserRound size={16} /><select value={role} onChange={(event) => setRole(event.target.value)} aria-label="切换数据权限视角"><option value="core">核心课题组</option><option value="researcher">研究员</option></select><ChevronDown size={14} /></label>
@@ -242,37 +247,78 @@ function Metric({ label, value, helper, icon: Icon, tone = 'blue' }) { return <d
 function OverviewPage({ role, navigate }) {
   const state = useLoad(() => Promise.all([api.get(`/api/overview?role=${role}`), api.get(`/api/collection?role=${role}`)]).then(([overview, collection]) => ({ overview, collection })), [role])
   const publicTopics = useLoad(() => api.get(`/api/public-demo/topics?role=${role}`), [role])
+  const [query, setQuery] = useState('')
+  const [selectedRecord, setSelectedRecord] = useState(null)
   if (state.loading && !state.data) return <LoadingPanel />
   if (state.error) return <ErrorPanel message={state.error} onRetry={state.reload} />
   const { overview, collection } = state.data
   const metrics = overview.metrics || {}; const batch = overview.batch || {}
   const isPublic = overview.mode === 'PUBLIC_WEB_SAMPLE' || batch.code === 'PUBLIC-WEB-20260827'
-  const categoryEntries = Object.entries(batch.category_counts || {})
-  const maxEvidence = Math.max(...(overview.evidence_distribution || []).map((item) => item.count), 1)
+  const topicPayload = publicTopics.data || {}
+  const topicStatus = topicPayload.status || {}
+  const topics = topicPayload.items || topicPayload.topics || []
+  const observations = topicPayload.platform_access_observations || topicPayload.status?.platform_access_observations || batch.metadata?.platformAccessObservations || []
+  const recentRecords = topics.flatMap((topic) => (topic.preview || topic.items_preview || []).map((item) => ({ ...item, topic_name: publicTopicName(topic) })))
+    .sort((a, b) => new Date(b.published_at || b.collected_at || 0) - new Date(a.published_at || a.collected_at || 0))
+  const readableChannels = observations.filter((item) => String(item.status || item.access_status || '').startsWith('PUBLIC')).length
+  const recordCount = topicPayload.record_count ?? topicStatus.record_count ?? metrics.records ?? topics.reduce((sum, item) => sum + Number(item.count || 0), 0)
+  const platformCount = topicPayload.platform_count ?? topicStatus.platform_count ?? topicPayload.platforms?.length ?? 0
+  const channelCount = topicPayload.channel_count ?? topicStatus.channel_count ?? observations.length ?? metrics.connectors_total ?? 0
+  const maxTopicCount = Math.max(...topics.map((item) => Number(item.count || item.record_count || 0)), 1)
+  const search = (event) => { event.preventDefault(); if (query.trim()) navigate('knowledge', { q: query.trim() }) }
+  const openRecord = async (item) => {
+    const recordId = item.record_id || item.id
+    if (!recordId) { setSelectedRecord(item); return }
+    try { setSelectedRecord(await api.get(`/api/records/${encodeURIComponent(recordId)}?role=${role}`)) } catch { setSelectedRecord(item) }
+  }
   return (
-    <div className="page-stack">
-      <PageHeader eyebrow="运行总览 / OVERVIEW" title="系统概览" description={isPublic ? '以公开网页试采批次展示采集、治理、检索、专题与证据下钻流程。' : '以本地测试批次验证采集、治理、检索、图谱、研判与输出的完整流程。'} actions={<Button variant="secondary" icon={RefreshCw} onClick={state.reload}>刷新</Button>} />
-      <Notice tone={isPublic ? 'info' : 'test'} icon={isPublic ? Globe2 : TestTube2}><strong>{isPublic ? '当前为公开网页试采模式。' : '当前为测试数据模式。'}</strong> {overview.notice}</Notice>
-      <div className="metric-grid">
-        <Metric label="结构化记录" value={formatNumber(metrics.records)} helper={`${categoryEntries.length} 个数据类别`} icon={Database} tone="blue" />
-        <Metric label="知识索引" value={formatNumber(metrics.knowledge_chunks)} helper="本地持久化知识块" icon={Library} tone="teal" />
-        <Metric label="事件线索" value={formatNumber(metrics.events)} helper="来自源文件结构化结果" icon={BellRing} tone="amber" />
-        <Metric label="开放质量问题" value={formatNumber(metrics.quality_open)} helper="冲突与生产字段缺口" icon={CircleAlert} tone="red" />
+    <div className="page-stack overview-page">
+      <section className="overview-command">
+        <div className="overview-command-copy">
+          <div className="snapshot-line"><span className="live-dot" />{isPublic ? '公开网页试采快照' : '本地测试快照'}<span>{formatDateTime(topicPayload.collected_at || topicPayload.latest_collected_at || batch.updated_at)}</span></div>
+          <h1>今日监测总览</h1>
+          <p>{overview.notice}</p>
+        </div>
+        <form className="overview-search" onSubmit={search}>
+          <Search size={21} />
+          <input value={query} maxLength="500" onChange={(event) => setQuery(event.target.value)} placeholder="搜索人物、国家、机构、事件或关键词" aria-label="输入全局搜索内容" />
+          <Button type="submit" icon={ArrowRight} disabled={!query.trim()}>搜索</Button>
+        </form>
+        <div className="quick-queries"><span>重点专题</span>{topics.slice(0, 4).map((item) => <button key={publicTopicSlug(item) || publicTopicName(item)} onClick={() => navigate('topics', { topic: publicTopicSlug(item) })}>{publicTopicName(item)}</button>)}</div>
+      </section>
+
+      <section className="overview-stat-strip" aria-label="当前批次核心指标">
+        <button onClick={() => navigate('topics')}><span>公开记录</span><strong>{formatNumber(recordCount)}</strong><small>当前活动批次</small><ArrowRight size={15} /></button>
+        <button onClick={() => navigate('topics')}><span>重点专题</span><strong>{formatNumber(topics.length)}</strong><small>均可下钻到原文</small><ArrowRight size={15} /></button>
+        <button onClick={() => navigate('collection')}><span>入库来源</span><strong>{formatNumber(platformCount)}</strong><small>平台标签已入库</small><ArrowRight size={15} /></button>
+        <button onClick={() => navigate('collection')}><span>巡检渠道</span><strong>{formatNumber(channelCount)}</strong><small>{readableChannels} 个本轮公开可读</small><ArrowRight size={15} /></button>
+      </section>
+
+      <div className="overview-work-grid">
+        <section className="panel focus-panel">
+          <div className="panel-heading"><div><h2>重点专题</h2><p>按当前公开快照聚合，点击进入证据链</p></div><Button variant="ghost" icon={ArrowRight} onClick={() => navigate('topics')}>全部专题</Button></div>
+          {publicTopics.loading && !publicTopics.data ? <div className="topic-home-loading">正在读取专题…</div> : publicTopics.error ? <div className="topic-home-loading muted">专题服务暂不可用</div> : <div className="focus-topic-list">{topics.map((item, index) => {
+            const platforms = publicFacetNames(item.platforms).slice(0, 3)
+            const count = Number(item.count || item.record_count || 0)
+            return <button key={publicTopicSlug(item) || publicTopicName(item)} onClick={() => navigate('topics', { topic: publicTopicSlug(item) })}><span className="focus-index">{String(index + 1).padStart(2, '0')}</span><span className="focus-copy"><strong>{publicTopicName(item)}</strong><small>{item.analysis?.narrative || item.description || '当前公开记录已形成可检索证据快照。'}</small><span>{platforms.length ? platforms.join(' · ') : '来源平台未标注'}</span></span><span className="focus-volume"><strong>{formatNumber(count)}</strong><small>条记录</small><i><b style={{ width: `${Math.max(8, (count / maxTopicCount) * 100)}%` }} /></i></span><ChevronRight size={17} /></button>
+          })}{!topics.length && <EmptyState icon={Target} title="暂无重点专题" description="当前活动批次尚未形成专题聚合。" />}</div>}
+        </section>
+
+        <section className="panel coverage-panel">
+          <div className="panel-heading"><div><h2>数据快照</h2><p>采集批次、覆盖范围与能力边界</p></div><Badge tone="success">{statusLabel(batch.status)}</Badge></div>
+          <div className="snapshot-batch"><div className="batch-icon"><FileArchive size={21} /></div><div><strong>{batch.name || '当前活动批次'}</strong><span>{batch.code || '批次号未提供'}</span></div></div>
+          <div className="coverage-numbers"><div><strong>{formatNumber(recordCount)}</strong><span>记录</span></div><div><strong>{formatNumber(platformCount)}</strong><span>入库来源</span></div><div><strong>{formatNumber(metrics.knowledge_chunks || recordCount)}</strong><span>知识索引</span></div></div>
+          <div className="channel-glance">{observations.slice(0, 6).map((item) => <div key={item.platform || item.name}><span className={String(item.status || '').startsWith('PUBLIC') ? 'ok' : 'limited'} /><strong>{item.platform || item.name}</strong><small>{String(item.status || '').startsWith('PUBLIC') ? '公开可读' : '受限 / 失败'}</small></div>)}</div>
+          <div className="capability-boundary"><Info size={16} /><span>翻译、情感、立场和风险分析当前保持“未运行”，不生成模拟结论。</span></div>
+          <Button variant="secondary" icon={Server} onClick={() => navigate('collection')}>查看采集与批次</Button>
+        </section>
       </div>
-      <Panel title="重点专题" subtitle="公开网页试采样本，支持专题与原文证据下钻" action={<Button variant="ghost" icon={ArrowRight} onClick={() => navigate('topics')}>查看全部专题</Button>}>
-        {publicTopics.loading && !publicTopics.data ? <div className="topic-home-loading">正在读取专题…</div> : publicTopics.error ? <div className="topic-home-loading muted">专题服务暂不可用</div> : <div className="topic-home-grid">{(publicTopics.data?.items || []).slice(0, 3).map((item) => <button className="topic-home-card" key={item.slug || item.name} onClick={() => navigate('topics', { topic: item.slug })}><span>{publicTopicName(item)}</span><strong>{formatNumber(item.count)} 条</strong><ChevronRight size={15} /></button>)}{!(publicTopics.data?.items || []).length && <span className="muted">暂无公开网页样本。</span>}</div>}
-      </Panel>
-      <div className="two-column wide-left">
-        <Panel title="当前数据批次" subtitle="可被后续正式采集批次替换，不绑定特定专题" action={<Button variant="ghost" icon={ArrowRight} onClick={() => navigate('collection')}>查看批次</Button>}>
-          <div className="batch-hero"><div className="batch-icon"><FileArchive size={25} /></div><div className="batch-main"><div className="batch-title-row"><strong>{batch.name}</strong><Badge tone="success">{statusLabel(batch.status)}</Badge></div><p>{batch.purpose}</p><div className="meta-line"><span>批次号 {batch.code}</span><span>源数据截至 {batch.source_date}</span><span>{batch.source_files?.length || 0} 份源文件</span></div></div></div>
-          <div className="category-strip">{categoryEntries.map(([key, count]) => <div key={key}><span>{CATEGORY_LABELS[key] || key}</span><strong>{count}</strong></div>)}</div>
-        </Panel>
-        <Panel title="流程状态" subtitle="只展示本批次已实际执行的处理环节"><div className="pipeline-list compact">{(collection.pipeline || []).map((step, index) => <div className="pipeline-step" key={step.id}><div className="pipeline-index">{index + 1}</div><div><strong>{step.name}</strong><span>{formatNumber(step.value)} {step.unit}</span></div><CheckCircle2 size={17} /></div>)}</div></Panel>
-      </div>
-      <div className="two-column">
-        <Panel title="证据性质分布" subtitle="区分直接证据、来源转述、研究分析与数据缺口"><div className="bar-list">{(overview.evidence_distribution || []).map((item) => <div className="bar-row" key={item.evidence_type}><div><span>{evidenceLabel(item.evidence_type)}</span><strong>{item.count}</strong></div><div className="bar-track"><i style={{ width: `${(item.count / maxEvidence) * 100}%` }} /></div></div>)}</div></Panel>
-        <Panel title="接入准备度" subtitle="平台适配器注册不等于实时采集已接通"><div className="readiness-block"><div className="readiness-score"><strong>{metrics.connectors_ready || 0}</strong><span>/ {metrics.connectors_total || 0} 已就绪</span></div><div className="progress-track"><i style={{ width: `${metrics.connectors_total ? (metrics.connectors_ready / metrics.connectors_total) * 100 : 0}%` }} /></div><p>{collection.notice}</p><Button variant="secondary" icon={Server} onClick={() => navigate('collection')}>查看连接器</Button></div></Panel>
-      </div>
+
+      <section className="panel evidence-feed-panel">
+        <div className="panel-heading"><div><h2>最新公开证据</h2><p>按发布时间排序，点击查看采集字段与来源锚点</p></div><Badge>{recentRecords.length} 条预览</Badge></div>
+        <div className="evidence-feed">{recentRecords.slice(0, 6).map((item, index) => <article key={item.record_id || item.id || index}><button onClick={() => openRecord(item)}><span className="feed-source">{item.platform || '公开网页'}</span><span className="feed-copy"><strong>{item.title || '无标题记录'}</strong><small>{item.topic_name || item.topic || '未归类专题'} · {formatDateTime(item.published_at || item.collected_at)}</small></span><ChevronRight size={16} /></button>{(item.original_url || item.source_url) && <a href={item.original_url || item.source_url} target="_blank" rel="noreferrer" aria-label={`打开 ${item.title || '记录'} 原文`}><ExternalLink size={15} /></a>}</article>)}{!recentRecords.length && <EmptyState icon={FileSearch} title="暂无证据预览" description="进入重点专题查看当前批次记录。" />}</div>
+      </section>
+      {selectedRecord && <PublicRecordDrawer item={selectedRecord} role={role} onClose={() => setSelectedRecord(null)} />}
     </div>
   )
 }
@@ -313,8 +359,8 @@ const PUBLIC_TOPIC_LABELS = {
   'xiongan-new-area': '雄安新区',
   apec: 'APEC 2026',
   'apec-2026': 'APEC 2026',
-  'xi-overseas': '习近平海外活动',
-  xi: '习近平海外活动',
+  'xi-overseas': '海外涉习舆情专题',
+  xi: '海外涉习舆情专题',
 }
 
 function publicTopicSlug(item) {
@@ -328,7 +374,8 @@ function publicTopicSlug(item) {
 }
 
 function publicTopicName(item) {
-  return item?.name || item?.title || item?.topic || PUBLIC_TOPIC_LABELS[publicTopicSlug(item)] || publicTopicSlug(item) || '未命名专题'
+  const slug = publicTopicSlug(item)
+  return PUBLIC_TOPIC_LABELS[slug] || item?.name || item?.title || item?.topic || slug || '未命名专题'
 }
 
 function publicTopicItems(payload) {
@@ -354,6 +401,7 @@ function publicFacetNames(value) {
 function TopicsPage({ role, params, navigate }) {
   const selectedSlug = params.get('topic') || ''
   const listState = useLoad(() => api.get(`/api/public-demo/topics?role=${role}`), [role])
+  const topicAnalysis = useLoad(() => selectedSlug ? api.get(`/api/analysis?role=${role}&topic_id=${encodeURIComponent(selectedSlug)}`) : Promise.resolve(null), [role, selectedSlug])
   const detailState = useLoad(() => selectedSlug
     ? api.get(`/api/public-demo/topics/${encodeURIComponent(selectedSlug)}?role=${role}`)
     : Promise.resolve(null), [role, selectedSlug])
@@ -361,8 +409,12 @@ function TopicsPage({ role, params, navigate }) {
   const [selectedRecord, setSelectedRecord] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [actionError, setActionError] = useState('')
+  const [recordQuery, setRecordQuery] = useState('')
+  const [recordPlatform, setRecordPlatform] = useState('')
+  const [recordCountry, setRecordCountry] = useState('')
+  const [channelFilter, setChannelFilter] = useState('all')
 
-  useEffect(() => { setSelectedRecord(null); setActionError('') }, [selectedSlug])
+  useEffect(() => { setSelectedRecord(null); setActionError(''); setRecordQuery(''); setRecordPlatform(''); setRecordCountry('') }, [selectedSlug])
 
   const refresh = async () => {
     if (role !== 'core' || refreshing) return
@@ -383,6 +435,10 @@ function TopicsPage({ role, params, navigate }) {
     return !query.trim() || text.includes(query.trim().toLowerCase())
   })
   const status = payload.status || payload.summary || payload
+  const channelObservations = payload.platform_access_observations || status.platform_access_observations || []
+  const visibleChannels = channelObservations.filter((item) => channelFilter === 'all'
+    || (channelFilter === 'readable' && String(item.status || item.access_status || '').startsWith('PUBLIC'))
+    || (channelFilter === 'limited' && !String(item.status || item.access_status || '').startsWith('PUBLIC')))
 
   if (selectedSlug) {
     const detailPayload = detailState.data || {}
@@ -395,9 +451,17 @@ function TopicsPage({ role, params, navigate }) {
     const platforms = publicFacetNames(detailTopic.platforms || selectedSummary.platforms)
     const countries = publicFacetNames(detailTopic.countries || detailTopic.country_regions || selectedSummary.countries || selectedSummary.country_regions)
     const keywords = publicValues(detailTopic.keywords || selectedSummary.keywords || [topicName])
+    const recordPlatforms = [...new Set(items.map((item) => item.platform || item.source || item.channel).filter(Boolean))]
+    const recordCountries = [...new Set(items.map((item) => item.country_region || item.country || item.region).filter(Boolean))]
+    const visibleItems = items.filter((item) => {
+      const text = `${item.title || ''} ${item.summary || ''} ${item.author_or_channel || ''} ${item.topic || ''}`.toLowerCase()
+      return (!recordQuery.trim() || text.includes(recordQuery.trim().toLowerCase()))
+        && (!recordPlatform || (item.platform || item.source || item.channel) === recordPlatform)
+        && (!recordCountry || (item.country_region || item.country || item.region) === recordCountry)
+    })
     return (
       <div className="page-stack">
-        <PageHeader eyebrow="监测与数据 / TOPIC DETAIL" title={topicName} description="按专题聚合公开网页试采记录；每条记录都保留原文地址、采集时间和证据性质。" actions={<><Button variant="secondary" icon={ArrowLeft} onClick={() => navigate('topics')}>返回专题</Button><Button icon={RefreshCw} disabled={role !== 'core' || refreshing} title={role !== 'core' ? '研究员视角为只读' : ''} onClick={refresh}>{refreshing ? '刷新中…' : '刷新样本'}</Button></>} />
+        <PageHeader eyebrow="重点专题 / 证据研判" title={topicName} description="公开样本、来源分布与原文证据处于同一条下钻路径。" actions={<><Button variant="secondary" icon={ArrowLeft} onClick={() => navigate('topics')}>返回专题</Button><Button variant="secondary" icon={Search} onClick={() => navigate('knowledge', { q: topicName })}>检索该专题</Button></>} />
         {actionError && <Notice tone="danger" icon={CircleAlert}>{actionError}</Notice>}
         {detailState.loading && !detailState.data ? <LoadingPanel label="正在读取专题记录…" /> : detailState.error ? <ErrorPanel message={detailState.error} onRetry={detailState.reload} /> : <>
           <Notice tone="info" icon={Globe2}><strong>公开网页试采。</strong> 当前记录来自可直接访问的公开页面或公开 RSS 元数据；需要登录、验证码或官方授权的平台不会被绕过。</Notice>
@@ -411,36 +475,55 @@ function TopicsPage({ role, params, navigate }) {
             <Panel title="专题研判摘要" subtitle="仅展示公开样本中的可验证字段，不代替人工研判">
               <p className="lead-copy">{detailTopic.description || detailTopic.summary || detailTopic.analysis?.narrative || selectedSummary.description || selectedSummary.summary || '当前专题已形成公开网页样本，可从下方记录继续下钻。'}</p>
               <div className="topic-detail-block"><h3>关键词</h3><div className="tag-list roomy">{keywords.map((item) => <span key={item}>{item}</span>)}</div></div>
-              <DefinitionList items={[["情感分析", '未运行'], ['立场识别', '未运行'], ['风险研判', '待人工核验'], ['采集范围', detailTopic.scope || selectedSummary.scope || '公开网页与公开 RSS'], ['样本标识', detailTopic.demo_label || selectedSummary.demo_label || '公开网页试采']]} />
+              <TopicWorkflowSummary data={topicAnalysis.data} loading={topicAnalysis.loading} error={topicAnalysis.error} />
+              <DefinitionList items={[["采集范围", detailTopic.scope || selectedSummary.scope || '公开网页与公开 RSS'], ['样本标识', detailTopic.demo_label || selectedSummary.demo_label || '公开网页试采']]} />
             </Panel>
             <Panel title="来源分布" subtitle="平台、国家和语言字段来自采集记录"><div className="topic-facet-list"><div><span><Globe2 size={14} />平台</span><strong>{platforms.length ? platforms.join(' · ') : '未提供'}</strong></div><div><span><MapPin size={14} />国家 / 地区</span><strong>{countries.length ? countries.join(' · ') : '未提供'}</strong></div><div><span><Languages size={14} />语言</span><strong>{publicFacetNames(detailTopic.languages || selectedSummary.languages).join(' · ') || '中文 / 英文混合'}</strong></div></div></Panel>
           </div>
-          <Panel title="专题记录" subtitle="点击记录查看原文摘要、结构化字段和来源锚点" action={<Badge>{items.length} 条</Badge>}>
-            <div className="topic-record-list">{items.map((item, index) => <PublicTopicRecord key={item.record_id || item.id || item.original_url || index} item={item} index={index} role={role} onSelect={setSelectedRecord} />)}{!items.length && <EmptyState icon={FileSearch} title="当前专题没有可展示记录" description="请刷新公开样本或返回专题列表。" />}</div>
+          <div className="topic-context-actions"><Button variant="secondary" icon={RefreshCw} disabled={role !== 'core' || refreshing} title={role !== 'core' ? '研究员视角为只读' : '从服务器保存的公开快照重新导入'} onClick={refresh}>{refreshing ? '导入中…' : '重新导入快照'}</Button><Button icon={FileText} onClick={() => navigate('reports', { focus: topicName })}>生成专题报告</Button></div>
+          <Panel title="专题记录" subtitle="筛选后点击记录查看采集字段、摘要和来源锚点" action={<Badge>{visibleItems.length} / {items.length} 条</Badge>}>
+            <div className="topic-record-toolbar"><label className="search-input"><Search size={16} /><input value={recordQuery} onChange={(event) => setRecordQuery(event.target.value)} placeholder="搜索标题、摘要或作者" /></label><select value={recordPlatform} onChange={(event) => setRecordPlatform(event.target.value)} aria-label="按平台筛选"><option value="">全部平台</option>{recordPlatforms.map((item) => <option key={item}>{item}</option>)}</select><select value={recordCountry} onChange={(event) => setRecordCountry(event.target.value)} aria-label="按国家或地区筛选"><option value="">全部国家 / 地区</option>{recordCountries.map((item) => <option key={item}>{item}</option>)}</select></div>
+            <div className="topic-record-list">{visibleItems.map((item, index) => <PublicTopicRecord key={item.record_id || item.id || item.original_url || index} item={item} index={index} role={role} onSelect={setSelectedRecord} />)}{!visibleItems.length && <EmptyState icon={FileSearch} title="没有匹配记录" description="请调整关键词或筛选条件。" />}</div>
           </Panel>
         </>}
-        {selectedRecord && <PublicRecordDrawer item={selectedRecord} onClose={() => setSelectedRecord(null)} />}
+        {selectedRecord && <PublicRecordDrawer item={selectedRecord} role={role} onClose={() => setSelectedRecord(null)} />}
       </div>
     )
   }
 
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="监测与数据 / TOPICS" title="重点专题" description="围绕演示验收场景聚合公开网页样本，支持专题、平台、国家与原文证据逐级下钻。" actions={<Button icon={RefreshCw} disabled={role !== 'core' || refreshing} title={role !== 'core' ? '研究员视角为只读' : ''} onClick={refresh}>{refreshing ? '刷新中…' : '刷新公开样本'}</Button>} />
+      <PageHeader eyebrow="核心工作 / TOPICS" title="重点专题" description="围绕三个核心场景组织公开记录、来源分布和原文证据。" actions={<Button icon={RefreshCw} disabled={role !== 'core' || refreshing} title={role !== 'core' ? '研究员视角为只读' : '从服务器保存的公开快照重新导入'} onClick={refresh}>{refreshing ? '导入中…' : '重新导入快照'}</Button>} />
       {actionError && <Notice tone="danger" icon={CircleAlert}>{actionError}</Notice>}
       <Notice tone="info" icon={Globe2}><strong>公开网页试采样本。</strong> 已将可直接访问的公开页面和 RSS 元数据整理为可检索批次；社交平台登录墙、验证码和官方 API 授权不会被绕过。</Notice>
       <div className="topic-status-line"><Badge tone="success">{status.demo_label || '公开网页试采'}</Badge><span>采集时间 {formatDateTime(status.collected_at || status.latest_collected_at)}</span><span>{formatNumber(status.record_count ?? status.records ?? topics.reduce((sum, item) => sum + Number(item.count || item.record_count || 0), 0))} 条记录</span><span>{formatNumber(status.channel_count ?? 12)} 个巡检渠道</span><span>{formatNumber(status.platform_count ?? status.platforms?.length ?? 0)} 个入库来源</span></div>
       <div className="toolbar topic-toolbar"><label className="search-input"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} maxLength="120" placeholder="搜索专题、平台或关键词" /></label><div className="toolbar-count">显示 {topics.length} / {(payload.topics || payload.items || []).length} 个专题</div></div>
       <div className="topic-grid">{topics.map((item) => <TopicCard key={publicTopicSlug(item) || publicTopicName(item)} item={item} onOpen={() => navigate('topics', { topic: publicTopicSlug(item) })} />)}{!topics.length && <Panel><EmptyState icon={Search} title="没有匹配专题" description="请调整搜索关键词。" /></Panel>}</div>
-      <Panel title="渠道访问观察" subtitle="样本状态不等于实时连接器已授权"><div className="topic-observation-list">{(payload.platform_access_observations || status.platform_access_observations || []).map((item) => <div key={item.platform || item.name}><span>{item.platform || item.name}</span><Badge tone={String(item.access_status || item.status || '').startsWith('PUBLIC') ? 'success' : 'warning'}>{item.access_status || item.status || '待观察'}</Badge><p>{item.reason || item.observation || item.note || item.limitation || item.status || '未提供观察说明'}</p></div>)}</div>{!(payload.platform_access_observations || status.platform_access_observations || []).length && <p className="muted">暂无渠道观察信息。</p>}</Panel>
+      <Panel title="12 渠道访问状态" subtitle="区分公开可读、受限或失败；巡检不等于正式接口已授权" action={<div className="segmented channel-filter"><button className={channelFilter === 'all' ? 'active' : ''} onClick={() => setChannelFilter('all')}>全部</button><button className={channelFilter === 'readable' ? 'active' : ''} onClick={() => setChannelFilter('readable')}>公开可读</button><button className={channelFilter === 'limited' ? 'active' : ''} onClick={() => setChannelFilter('limited')}>受限 / 失败</button></div>}><ChannelStatusTable items={visibleChannels} /></Panel>
     </div>
   )
+}
+
+function TopicWorkflowSummary({ data, loading, error }) {
+  if (loading) return <p className="muted">正在汇总该专题的机器判定和人工研判…</p>
+  const workflow = data?.workflow || data?.summary || {}
+  const count = (keys) => keys.map((key) => workflow[key]).find((value) => value !== undefined)
+  if (error || !data) return <Notice tone="subtle">本专题尚无可汇总的分析运行。可进入“分析研判”启动机器判定，并在人工确认后形成专题结论。</Notice>
+  return <div className="topic-workflow-summary"><span><strong>{formatNumber(count(['machine_completed', 'machine_count', 'total']) || 0)}</strong>机器判定</span><span><strong>{formatNumber(count(['human_confirmed', 'verified_count', 'confirmed']) || 0)}</strong>人工确认</span><span><strong>{formatNumber(count(['excluded_count', 'rejected']) || 0)}</strong>已排除</span></div>
 }
 
 function TopicCard({ item, onOpen }) {
   const platforms = publicFacetNames(item.platforms)
   const countries = publicFacetNames(item.countries || item.country_regions)
-  return <button className="topic-card" onClick={onOpen}><div className="topic-card-head"><div className="topic-card-icon"><Target size={20} /></div><div><Badge tone="success">公开样本</Badge><h2>{publicTopicName(item)}</h2></div><ChevronRight size={18} /></div><p>{item.description || item.summary || '公开网页试采专题，点击查看记录和来源证据。'}</p><div className="topic-card-meta"><span><Database size={13} />{formatNumber(item.count ?? item.record_count ?? item.total)} 条记录</span><span><Globe2 size={13} />{platforms.length ? platforms.join(' · ') : '平台未提供'}</span><span><MapPin size={13} />{countries.length ? countries.join(' · ') : '地区未提供'}</span></div><div className="topic-card-foot"><span>最近更新 {formatDateTime(item.latest_collected_at || item.collected_at || item.updated_at)}</span><span>查看证据 <ArrowRight size={13} /></span></div></button>
+  return <button className="topic-card" onClick={onOpen}><div className="topic-card-head"><div className="topic-card-icon"><Target size={20} /></div><div><Badge tone="success">公开快照</Badge><h2>{publicTopicName(item)}</h2></div><ChevronRight size={18} /></div><p>{item.analysis?.narrative || item.description || item.summary || '当前公开记录已形成可检索证据快照。'}</p><div className="topic-card-meta"><span><Database size={13} />{formatNumber(item.count ?? item.record_count ?? item.total)} 条记录</span><span><Globe2 size={13} />{platforms.length ? platforms.slice(0, 4).join(' · ') : '平台未提供'}</span><span><MapPin size={13} />{countries.length ? `${countries.length} 个国家 / 地区标签` : '地区未提供'}</span></div><div className="topic-card-foot"><span>最近更新 {formatDateTime(item.latest_collected_at || item.collected_at || item.updated_at)}</span><span>进入专题 <ArrowRight size={13} /></span></div></button>
+}
+
+function ChannelStatusTable({ items }) {
+  if (!items.length) return <EmptyState icon={Server} title="没有匹配渠道" description="请切换状态筛选。" />
+  return <div className="channel-table"><div className="channel-table-head"><span>渠道</span><span>状态</span><span>HTTP</span><span>扫描条目</span><span>专题命中</span><span>最近检查</span><span>观察结果</span></div>{items.map((item) => {
+    const readable = String(item.status || item.access_status || '').startsWith('PUBLIC')
+    return <div className="channel-table-row" key={item.platform || item.name}><strong>{item.platform || item.name}</strong><Badge tone={readable ? 'success' : 'warning'}>{readable ? '公开可读' : statusLabel(item.status || item.access_status)}</Badge><span>{item.http_status || '—'}</span><span>{formatNumber(item.records_seen ?? item.items_seen ?? 0)}</span><span>{formatNumber(item.topic_matches ?? 0)}</span><span>{shorten(formatDateTime(item.checked_at), 16)}</span><p>{item.reason || item.observation || item.limitation || '未提供观察说明'}</p></div>
+  })}</div>
 }
 
 function PublicTopicRecord({ item, index, role, onSelect }) {
@@ -455,8 +538,10 @@ function PublicTopicRecord({ item, index, role, onSelect }) {
   }}><span className="topic-record-index">{String(index + 1).padStart(2, '0')}</span><span className="topic-record-copy"><strong>{title}</strong><small>{item.summary || item.description || '没有可展示摘要。'}</small><span className="topic-record-meta"><span>{platform}</span>{published && <span>{formatDateTime(published)}</span>}{item.language && <span>{item.language}</span>}</span></span><ChevronRight size={16} /></button>{url && <a className="topic-record-link" href={url} target="_blank" rel="noreferrer" aria-label={`打开 ${title} 原文`} title="打开原文"><ExternalLink size={15} /></a>}</article>
 }
 
-function PublicRecordDrawer({ item, onClose }) {
+function PublicRecordDrawer({ item, role, onClose }) {
   useEscapeClose(onClose)
+  const recordId = item.record_id || item.id || item.content?.record_id
+  const analysisState = useLoad(() => recordId ? api.get(`/api/records/${encodeURIComponent(recordId)}/analysis?role=${role}`) : Promise.resolve({ analyses: [] }), [recordId, role])
   const content = item.content || item.raw || item
   const value = (...keys) => keys.map((key) => content?.[key] ?? item?.[key]).find((entry) => entry !== undefined && entry !== null && entry !== '')
   const title = item.title || content.title || content.original_title || '记录详情'
@@ -467,10 +552,25 @@ function PublicRecordDrawer({ item, onClose }) {
     ['平台', value('platform', 'source', 'channel')], ['作者 / 频道', value('author_or_channel', 'author_name', 'author')],
     ['国家 / 地区', value('country_region', 'country', 'region')], ['语言', value('language')],
     ['发布时间', value('published_at', 'published_time', 'publish_time')], ['采集时间', value('collected_at', 'collection_time', 'created_at')],
-    ['关键词 / 专题', value('topic', 'keywords')], ['情感', value('sentiment') || '未运行'], ['立场', value('stance') || '未运行'], ['风险', value('risk', 'risk_grade') || '待人工研判'],
+    ['关键词 / 专题', value('topic', 'keywords')],
   ]
   const translation = value('translation_zh', 'translated_text')
-  return <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside className="drawer wide" role="dialog" aria-modal="true" aria-label="公开记录详情"><div className="drawer-header"><div><span>{value('platform', 'source', 'channel') || '公开网页试采'} · {evidenceLabel(item.evidence_type || content.evidence_type || 'source_snapshot')}</span><h2>{title}</h2></div><button className="icon-btn" onClick={onClose} aria-label="关闭记录详情"><X size={19} /></button></div><div className="drawer-body"><div className="tag-list roomy"><Badge tone="success">公开样本</Badge><Badge>{evidenceLabel(item.evidence_type || content.evidence_type || 'source_snapshot')}</Badge>{(item.sensitivity || content.sensitivity) && <Badge>{item.sensitivity || content.sensitivity}</Badge>}</div><p className="lead-copy">{item.summary || content.summary || content.description || '没有可展示摘要。'}</p><div className="detail-section"><h3>原文与采集字段</h3><DefinitionList items={fields.map(([label, fieldValue]) => [label, Array.isArray(fieldValue) ? fieldValue.join(' · ') : (fieldValue || '未提供')])} /></div><div className="detail-section"><h3>中文翻译</h3><p className="raw-evidence">{translation || `当前未配置机器翻译（${value('translation_status') || 'NOT_CONFIGURED'}）。`}</p></div>{interaction && <div className="detail-section"><h3>互动指标</h3><div className="json-fields"><div><span>互动数据</span><strong>{typeof interaction === 'object' ? JSON.stringify(interaction, null, 2) : String(interaction)}</strong></div></div></div>}<div className="detail-section"><h3>原文摘要</h3><p className="raw-evidence">{value('original_text', 'text', 'content_text') || item.summary || content.summary || '当前批次只保存公开页面摘要，没有复制受限正文。'}</p></div><div className="detail-section"><h3>来源锚点</h3>{sourceRefs.length ? <div className="file-list">{sourceRefs.map((source) => /^https?:\/\//i.test(String(source)) ? <a className="source-link" href={source} target="_blank" rel="noreferrer" key={source}><ExternalLink size={14} />{shorten(source, 68)}</a> : <span key={source}><FileCheck2 size={14} />{source}</span>)}</div> : <p className="muted">未提供可点击的原始 URL。</p>}</div></div></aside></div>
+  const analyses = analysisState.data?.analyses || []
+  const current = analysisState.data?.current_analysis || analyses[0]
+  const machine = current || analyses[0]
+  const human = analysisState.data?.current_review || current?.review || null
+  const finalConclusion = analysisState.data?.final_conclusion
+  const finalText = finalConclusion?.summary || human?.narrative || (human?.decision === 'HUMAN_REJECTED' ? '人工研判已驳回该机器候选，不纳入最终结论。' : '')
+  return <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside className="drawer wide" role="dialog" aria-modal="true" aria-label="公开记录详情"><div className="drawer-header"><div><span>{value('platform', 'source', 'channel') || '公开网页试采'} · {evidenceLabel(item.evidence_type || content.evidence_type)}</span><h2>{title}</h2></div><button className="icon-btn" onClick={onClose} aria-label="关闭记录详情"><X size={19} /></button></div><div className="drawer-body"><div className="tag-list roomy"><Badge tone="success">公开样本</Badge><Badge>{evidenceLabel(item.evidence_type || content.evidence_type)}</Badge>{(item.sensitivity || content.sensitivity) && <Badge>{item.sensitivity || content.sensitivity}</Badge>}</div><p className="lead-copy">{item.summary || content.summary || content.description || '没有可展示摘要。'}</p><div className="detail-section"><h3>原文与采集字段</h3><DefinitionList items={fields.map(([label, fieldValue]) => [label, Array.isArray(fieldValue) ? fieldValue.join(' · ') : (fieldValue || '未提供')])} /></div><AnalysisTrace loading={analysisState.loading} error={analysisState.error} machine={machine} human={human} current={current} finalText={finalText} /><div className="detail-section"><h3>中文翻译</h3><p className="raw-evidence">{translation || `当前未配置机器翻译（${value('translation_status') || 'NOT_CONFIGURED'}）。`}</p></div>{interaction && <div className="detail-section"><h3>互动指标</h3><div className="json-fields"><div><span>互动数据</span><strong>{typeof interaction === 'object' ? JSON.stringify(interaction, null, 2) : String(interaction)}</strong></div></div></div>}<div className="detail-section"><h3>原文摘要</h3><p className="raw-evidence">{value('original_text', 'text', 'content_text') || item.summary || content.summary || '当前批次只保存公开页面摘要，没有复制受限正文。'}</p></div><div className="detail-section"><h3>来源锚点</h3>{sourceRefs.length ? <div className="file-list">{sourceRefs.map((source) => /^https?:\/\//i.test(String(source)) ? <a className="source-link" href={source} target="_blank" rel="noreferrer" key={source}><ExternalLink size={14} />{shorten(source, 68)}</a> : <span key={source}><FileCheck2 size={14} />{source}</span>)}</div> : <p className="muted">未提供可点击的原始 URL。</p>}</div></div></aside></div>
+}
+
+function AnalysisTrace({ loading, error, machine, human, current, finalText }) {
+  if (loading) return <div className="detail-section"><h3>分析研判链路</h3><p className="muted">正在读取机器判定和人工研判…</p></div>
+  if (error) return <div className="detail-section"><h3>分析研判链路</h3><p className="muted">分析记录暂不可用。</p></div>
+  const field = (source, ...keys) => keys.map((key) => source?.[key]).find((value) => value !== undefined && value !== null && value !== '')
+  const reviewStatus = human?.decision || human?.workflow || human?.status
+  const finalStatus = ['HUMAN_CONFIRMED', 'HUMAN_REVISED'].includes(reviewStatus) ? reviewStatus : ''
+  return <div className="analysis-trace"><div className="detail-section"><h3>为什么这样判断</h3><p className="raw-evidence">{field(human, 'narrative', 'note') || field(current, 'human_summary', 'final_summary', 'machine_reason', 'narrative', 'reason', 'rationale') || '该记录尚未形成可展示的分析依据。'}</p></div><div className="trace-grid"><section><span>机器判定</span><Badge tone={statusTone(machine?.status)}>{machine ? statusLabel(machine.status || 'MACHINE_CANDIDATE') : '尚无机器判定'}</Badge><p>{machine ? `情感：${field(machine, 'machine_sentiment', 'sentiment') || '未标注'}；立场：${field(machine, 'machine_stance', 'stance') || '未标注'}；风险：${field(machine, 'machine_risk_level', 'risk_level', 'risk') || '未标注'}` : '系统尚未为该记录生成机器候选。'}</p></section><section><span>人工研判</span><Badge tone={statusTone(reviewStatus)}>{human ? statusLabel(reviewStatus) : '待人工研判'}</Badge><p>{human ? (field(human, 'note', 'review_note', 'narrative', 'human_summary') || '人工研判已记录，未提供补充备注。') : '尚未提交人工确认、修订、驳回或补证。'}</p></section><section><span>最终结论</span><Badge tone={statusTone(finalStatus)}>{finalStatus ? statusLabel(finalStatus) : '尚未形成'}</Badge><p>{finalText || '只有人工确认或修订后才形成正式结论；驳回和待补证不会进入正式报告。'}</p></section></div></div>
 }
 
 function CollectionPage({ role }) {
@@ -502,7 +602,7 @@ function CollectionPage({ role }) {
         <form className="record-toolbar" onSubmit={(event) => { event.preventDefault(); setSubmittedQuery(query.trim()) }}><label className="search-input"><Search size={17} /><input maxLength="300" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索记录标题或摘要" /></label><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="筛选数据类别"><option value="">全部类别</option>{Object.entries(batch.category_counts || {}).map(([key, count]) => <option value={key} key={key}>{CATEGORY_LABELS[key] || key}（{count}）</option>)}</select><Button type="submit" icon={Search}>查询</Button></form>
         <DatasetRecords batchCode={batch.code} category={category} query={submittedQuery} role={role} onSelect={setSelectedRecord} />
       </Panel>
-      {selectedRecord && <RecordDrawer item={selectedRecord} onClose={() => setSelectedRecord(null)} />}
+      {selectedRecord && <PublicRecordDrawer item={selectedRecord} role={role} onClose={() => setSelectedRecord(null)} />}
     </div>
   )
 }
@@ -573,39 +673,55 @@ function RecordDrawer({ item, onClose }) {
   return <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside className="drawer wide" role="dialog" aria-modal="true" aria-label="记录详情"><div className="drawer-header"><div><span>{CATEGORY_LABELS[item.category] || item.category}</span><h2>{item.title}</h2></div><button className="icon-btn" onClick={onClose} aria-label="关闭记录详情"><X size={19} /></button></div><div className="drawer-body"><div className="tag-list roomy"><Badge>{evidenceLabel(item.evidence_type)}</Badge><Badge>{item.sensitivity}</Badge><Badge>{item.id}</Badge></div><p className="lead-copy">{item.summary || '没有可展示摘要。'}</p><div className="detail-section"><h3>结构化字段</h3><div className="json-fields">{Object.entries(content).map(([key, value]) => <div key={key}><span>{key}</span><strong>{typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '未提供')}</strong></div>)}</div></div><div className="detail-section"><h3>来源锚点</h3>{sourceRefs.length ? <div className="file-list">{sourceRefs.map((source) => /^https?:\/\//i.test(String(source)) ? <a className="source-link" href={source} target="_blank" rel="noreferrer" key={source}><ExternalLink size={14} />{shorten(source, 68)}</a> : <span key={source}><FileCheck2 size={14} />{source}</span>)}</div> : <p className="muted">源文件未提供可点击的原始 URL 或帖子 ID。</p>}</div></div></aside></div>
 }
 
-function KnowledgePage({ role, initialQuery }) {
+function KnowledgePage({ role, initialQuery, navigate }) {
   const collections = useLoad(() => api.get(`/api/knowledge/collections?role=${role}`), [role])
   const [query, setQuery] = useState(initialQuery); const [category, setCategory] = useState('')
   const [selectedRecord, setSelectedRecord] = useState(null)
   const [result, setResult] = useState(null); const [searching, setSearching] = useState(false); const [error, setError] = useState('')
+  const [details, setDetails] = useState([])
   const runSearch = async (event) => {
     event?.preventDefault(); if (!query.trim()) return
-    setSearching(true); setError('')
-    try { setResult(await api.post('/api/knowledge/search', { query: query.trim(), role, top_k: 10, category: category || null })) }
-    catch (searchError) { setError(searchError.message) }
+    setSearching(true); setError(''); setDetails([])
+    try {
+      const payload = await api.post('/api/knowledge/search', { query: query.trim(), role, top_k: 10, category: category || null })
+      setResult(payload)
+      const loaded = await Promise.all((payload.results || []).map(async (item) => {
+        try { return await api.get(`/api/records/${encodeURIComponent(item.record_id)}?role=${role}`) } catch { return null }
+      }))
+      setDetails(loaded.filter(Boolean))
+    } catch (searchError) { setError(searchError.message) }
     finally { setSearching(false) }
   }
   useEffect(() => setQuery(initialQuery), [initialQuery])
   useEffect(() => { if (initialQuery) runSearch() }, [initialQuery, role]) // eslint-disable-line react-hooks/exhaustive-deps
+  const contentRows = details.map((item) => item.content || item.raw || item)
+  const facet = (keys) => [...new Set(contentRows.map((item) => keys.map((key) => item?.[key]).find(Boolean)).flatMap((value) => Array.isArray(value) ? value : [value]).filter(Boolean))]
+  const resultPlatforms = facet(['platform', 'source', 'channel'])
+  const resultCountries = facet(['country_region', 'country', 'region'])
+  const resultTopics = facet(['topic', 'themes', 'keywords'])
+  const resultLanguages = facet(['language'])
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="知识与研判 / KNOWLEDGE" title="嵌入式知识库" description="对本地结构化记录进行持久化索引、版本管理与可追溯混合检索。" />
-      <Notice tone="info" icon={Fingerprint}><strong>检索能力边界：</strong> 当前融合词法匹配、规则和离线特征向量，不等同于大模型语义嵌入。</Notice>
-      {collections.loading && !collections.data ? <LoadingPanel /> : collections.error ? <ErrorPanel message={collections.error} onRetry={collections.reload} /> : <div className="collection-grid">{(collections.data?.items || []).map((item) => <div className="knowledge-card" key={item.id}><div className="knowledge-icon"><BookOpenCheck size={21} /></div><div><span>知识集合</span><strong>{item.name}</strong><p>{item.description}</p></div><div className="knowledge-meta"><Badge tone="success">{statusLabel(item.version_status || item.lifecycle)}</Badge><span>{item.version}</span><span>{item.chunk_count} 个知识块</span></div></div>)}</div>}
-      <Panel title="混合检索" subtitle="每条结果返回融合分数、证据性质和源文件引用">
-        <form className="knowledge-search" onSubmit={runSearch}><div className="knowledge-search-box"><Search size={20} /><input autoFocus maxLength="500" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入人物、事件、主题或来源关键词" /></div><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="限制检索类别"><option value="">全部类别</option>{Object.entries(CATEGORY_LABELS).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select><Button type="submit" icon={Search} disabled={!query.trim() || searching}>{searching ? '检索中…' : '开始检索'}</Button></form>
+      <PageHeader eyebrow="核心工作 / SEARCH" title="全局搜索" description="从当前活动知识集合中查找人物、国家、机构、事件和关键词，并下钻原始证据。" />
+      <Panel title="混合检索" subtitle="结果返回相关性分数、证据性质、批次和来源锚点" className="search-workbench">
+        <form className="knowledge-search" onSubmit={runSearch}><div className="knowledge-search-box"><Search size={20} /><input autoFocus maxLength="500" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入人物、事件、国家、机构或主题关键词" /></div><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="限制检索类别"><option value="">全部类别</option>{Object.entries(CATEGORY_LABELS).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select><Button type="submit" icon={Search} disabled={!query.trim() || searching}>{searching ? '检索中…' : '开始检索'}</Button></form>
+        <div className="search-suggestions"><span>快捷搜索</span>{['雄安新区', 'APEC 2026', '海外涉习舆情'].map((item) => <button key={item} onClick={() => { setQuery(item); navigate('knowledge', { q: item }) }}>{item}</button>)}</div>
         {error && <Notice tone="danger" icon={CircleAlert}>{error}</Notice>}
-        {!result && !error && <EmptyState icon={Library} title="输入关键词开始检索" description="结果只来自当前本地知识集合，并附带证据引用。" />}
-        {result && <div className="search-results"><div className="result-summary"><span>检索到 {result.result_count} 条结果</span><Badge>{result.retrieval_mode}</Badge><span>前两条分差 {result.margin}</span></div><Notice tone="subtle">{result.notice}</Notice>{(result.results || []).map((item, index) => <SearchResult key={item.record_id} item={item} index={index + 1} onSelect={async (record) => { try { setSelectedRecord(await api.get(`/api/records/${encodeURIComponent(record.record_id)}?role=${role}`)) } catch { setSelectedRecord(record) } }} />)}{!result.results?.length && <EmptyState icon={Search} title="没有足够相关的记录" description="调整关键词或取消类别限制后重试。" />}</div>}
-        {selectedRecord && <RecordDrawer item={selectedRecord} onClose={() => setSelectedRecord(null)} />}
+        {!result && !error && <EmptyState icon={Library} title="等待检索" description="检索结果只来自当前活动知识集合。" />}
+        {result && <div className="search-results">
+          <div className="search-analysis-band"><div className="search-analysis-metrics"><div><strong>{formatNumber(result.result_count)}</strong><span>命中记录</span></div><div><strong>{formatNumber(resultPlatforms.length)}</strong><span>涉及平台</span></div><div><strong>{formatNumber(resultCountries.length)}</strong><span>国家 / 地区</span></div><div><strong>{formatNumber(resultTopics.length)}</strong><span>关联主题</span></div></div><div className="search-facets"><div><span>平台</span><strong>{resultPlatforms.join(' · ') || '详情加载中'}</strong></div><div><span>国家 / 地区</span><strong>{resultCountries.join(' · ') || '详情加载中'}</strong></div><div><span>语言</span><strong>{resultLanguages.join(' · ') || '未标注'}</strong></div><div><span>机器 / 人工结论</span><strong>{details.length ? '点击记录查看机器判定、人工研判与最终结论' : '记录详情加载后可查看机器和人工结论'}</strong></div></div></div>
+          <div className="search-context-actions"><Button variant="secondary" icon={Database} onClick={() => navigate('collection')}>新建监测任务</Button><Button variant="secondary" icon={Target} onClick={() => navigate('topics')}>查看重点专题</Button><Button variant="secondary" icon={BellRing} onClick={() => navigate('alerts')}>风险线索</Button><Button icon={FileText} onClick={() => navigate('reports', { focus: query.trim() })}>生成检索报告</Button></div>
+          <div className="result-summary"><span>检索到 {result.result_count} 条结果</span><Badge>混合检索</Badge><span>前两条分差 {result.margin}</span></div><Notice tone="subtle">{result.notice}</Notice>{(result.results || []).map((item, index) => <SearchResult key={item.record_id} item={item} index={index + 1} onSelect={async (record) => { try { setSelectedRecord(await api.get(`/api/records/${encodeURIComponent(record.record_id)}?role=${role}`)) } catch { setSelectedRecord(record) } }} />)}{!result.results?.length && <EmptyState icon={Search} title="没有足够相关的记录" description="调整关键词或取消类别限制后重试。" />}</div>}
+        {selectedRecord && <PublicRecordDrawer item={selectedRecord} role={role} onClose={() => setSelectedRecord(null)} />}
       </Panel>
+      <div className="knowledge-runtime">{collections.loading && !collections.data ? <span>正在读取知识集合…</span> : collections.error ? <span>知识集合状态暂不可用</span> : (collections.data?.items || []).map((item) => <div key={item.id}><BookOpenCheck size={16} /><span>{item.name}</span><Badge tone="success">{statusLabel(item.version_status || item.lifecycle)}</Badge><small>{item.version} · {item.chunk_count} 个知识块</small></div>)}<span><Fingerprint size={15} />词法、规则与离线特征向量融合；不是大模型语义嵌入。</span></div>
     </div>
   )
 }
 
 function SearchResult({ item, index, onSelect }) {
   const score = Math.round((item.score || 0) * 100)
-  return <article className="search-result-card clickable-card" role="button" tabIndex="0" onClick={() => onSelect?.(item)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(item) } }}><div className="result-index">{String(index).padStart(2, '0')}</div><div className="result-content"><div className="result-title"><div><Badge>{item.category_label}</Badge><Badge>{evidenceLabel(item.evidence_type)}</Badge></div><strong>{item.title}</strong></div><p>{item.summary || '没有可展示摘要。'}</p><div className="citation-line"><FileCheck2 size={14} /><span>{(item.source_refs || []).join(' · ') || '未提供源文件锚点'}</span><span>{item.batch_code}</span><span>{item.source_date}</span><span title={item.content_hash}>哈希 {shorten(item.content_hash, 14)}</span></div></div><div className="score-block"><strong>{score}</strong><span>融合分</span><div className="score-track"><i style={{ width: `${score}%` }} /></div><small>词法 {Math.round((item.score_breakdown?.lexical || 0) * 100)} · 向量 {Math.round((item.score_breakdown?.offline_vector || 0) * 100)} · 规则 {Math.round((item.score_breakdown?.rule || 0) * 100)}</small></div></article>
+  return <article className="search-result-card clickable-card" role="button" tabIndex="0" onClick={() => onSelect?.(item)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(item) } }}><div className="result-index">{String(index).padStart(2, '0')}</div><div className="result-content"><div className="result-title"><div><Badge>{item.category_label}</Badge><Badge>{evidenceLabel(item.evidence_type)}</Badge></div><strong>{item.title}</strong></div><p>{item.summary || '没有可展示摘要。'}</p><div className="citation-line"><FileCheck2 size={14} /><span>{(item.source_refs || []).join(' · ') || '未提供源文件锚点'}</span><span>{item.batch_code}</span><span>{item.source_date}</span><span title={item.content_hash}>哈希 {shorten(item.content_hash, 14)}</span></div></div><div className="score-block"><strong>{score}</strong><span>相关性分</span><div className="score-track"><i style={{ width: `${score}%` }} /></div><small>词法 {Math.round((item.score_breakdown?.lexical || 0) * 100)} · 向量 {Math.round(((item.score_breakdown?.offline_vector ?? item.score_breakdown?.vector) || 0) * 100)} · 规则 {Math.round((item.score_breakdown?.rule || 0) * 100)}</small></div></article>
 }
 
 function GraphPage({ role }) {
@@ -634,11 +750,50 @@ function GraphDetail({ node, edges, nodes }) {
 }
 
 function AnalysisPage({ role }) {
-  const state = useLoad(() => api.get(`/api/analysis?role=${role}`), [role])
-  if (state.loading && !state.data) return <LoadingPanel />
-  if (state.error) return <ErrorPanel message={state.error} onRetry={state.reload} />
-  const data = state.data; const maxTopic = Math.max(...(data.topics || []).map((item) => item.count), 1)
-  return <div className="page-stack"><PageHeader eyebrow="知识与研判 / ANALYSIS" title="分析研判" description="基于当前批次的来源标签和证据类型进行统计，不将未运行模型包装成分析结论。" /><div className="analysis-status-grid"><div className="analysis-status not-run"><div><CircleAlert size={20} /><Badge tone="warning">{statusLabel(data.sentiment.status)}</Badge></div><strong>情感分析</strong><p>{data.sentiment.reason}</p></div><div className="analysis-status source-tags"><div><CheckCircle2 size={20} /><Badge tone="success">已统计</Badge></div><strong>主题标签</strong><p>使用源文件已有主题标签聚合，未自动扩写或推断。</p></div><div className="analysis-status evidence"><div><CheckCircle2 size={20} /><Badge tone="success">已统计</Badge></div><strong>证据分层</strong><p>按记录的证据性质展示分布，支持进一步人工复核。</p></div></div><Notice tone="info">{data.notice}</Notice><div className="two-column wide-left"><Panel title="主题标签分布" subtitle="来自源文件标签的出现次数"><div className="topic-bars">{(data.topics || []).map((item) => <div key={item.name}><span title={item.name}>{item.name}</span><div><i style={{ width: `${(item.count / maxTopic) * 100}%` }} /></div><strong>{item.count}</strong></div>)}{!data.topics?.length && <EmptyState icon={Layers3} title="没有主题标签" />}</div></Panel><Panel title="风险与证据概况" subtitle="事件风险字段和记录证据性质"><div className="summary-section"><h3>事件风险标注</h3><div className="stat-chip-row">{(data.risks || []).map((item) => <div key={item.level}><span>{item.level}</span><strong>{item.count}</strong></div>)}{!data.risks?.length && <span className="muted">未形成风险统计</span>}</div></div><div className="summary-section"><h3>证据性质</h3><div className="evidence-list">{(data.evidence || []).map((item) => <div key={item.type}><span>{evidenceLabel(item.type)}</span><strong>{item.count}</strong></div>)}</div></div></Panel></div></div>
+  const legacy = useLoad(() => api.get(`/api/analysis?role=${role}`), [role])
+  const runs = useLoad(() => api.get(`/api/analysis/runs?role=${role}`), [role])
+  const queue = useLoad(() => api.get(`/api/analysis/queue?role=${role}`), [role])
+  const [selected, setSelected] = useState(null)
+  const [launchTopic, setLaunchTopic] = useState('')
+  const [launching, setLaunching] = useState(false)
+  const [message, setMessage] = useState('')
+  const [actionError, setActionError] = useState('')
+  const reloadAll = () => { legacy.reload(); runs.reload(); queue.reload() }
+  const launch = async () => {
+    if (role !== 'core' || launching) return
+    setLaunching(true); setActionError(''); setMessage('')
+    try {
+      const payload = await api.post('/api/analysis/runs', { role, ...(launchTopic.trim() ? { topic: launchTopic.trim() } : {}) })
+      setMessage(`已创建分析运行${payload.run?.id ? `：${payload.run.id}` : ''}，机器候选将进入人工研判队列。`)
+      reloadAll()
+    } catch (error) { setActionError(error.message || '无法启动分析运行') } finally { setLaunching(false) }
+  }
+  if ((legacy.loading && !legacy.data) || (runs.loading && !runs.data) || (queue.loading && !queue.data)) return <LoadingPanel label="正在读取分析研判工作台…" />
+  if (legacy.error && runs.error && queue.error) return <ErrorPanel message={legacy.error || runs.error || queue.error} onRetry={reloadAll} />
+  const data = legacy.data || {}; const runItems = runs.data?.runs || []; const queueItems = queue.data?.items || []
+  const candidateItems = (queue.data?.analyses || queueItems).map((item) => ({ ...item.analysis, record: item.record, review: item.review }))
+  const counts = queue.data?.counts || data.workflow || {}
+  const confirmed = counts.verified_count ?? ((counts.human_confirmed || 0) + (counts.human_revised || 0))
+  return <div className="page-stack"><PageHeader eyebrow="知识与研判 / ANALYSIS" title="分析研判" description="机器模型先输出候选判断，人工研判确认、修订、驳回或补充证据后才形成最终结论。" actions={<div className="analysis-launch"><input value={launchTopic} onChange={(event) => setLaunchTopic(event.target.value)} placeholder="专题 ID（可选）" disabled={role !== 'core'} /><Button icon={RefreshCw} disabled={role !== 'core' || launching} title={role !== 'core' ? '研究员视角不可启动分析' : ''} onClick={launch}>{launching ? '启动中…' : launchTopic ? '启动该专题' : '启动全批次'}</Button></div>} />{message && <Notice tone="info" icon={CheckCircle2}>{message}</Notice>}{actionError && <Notice tone="danger" icon={CircleAlert}>{actionError}</Notice>}<div className="analysis-status-grid workflow-summary"><div className="analysis-status source-tags"><div><CheckCircle2 size={20} /><Badge tone="success">{runItems.length} 次</Badge></div><strong>运行台账</strong><p>每次机器判定均保留模型、范围、时间和运行状态。</p></div><div className="analysis-status evidence"><div><CircleDot size={20} /><Badge tone="warning">{queueItems.length} 条</Badge></div><strong>人工研判队列</strong><p>待办记录须由研究人员基于证据确认、修订、驳回或补证。</p></div><div className="analysis-status source-tags"><div><CheckCircle2 size={20} /><Badge tone="success">{formatNumber(confirmed)}</Badge></div><strong>已确认结论</strong><p>已完成的人工研判作为报告和专题摘要的正式依据。</p></div></div><div className="analysis-work-grid"><Panel title="运行台账" subtitle="机器判定的执行范围与状态"><div className="analysis-run-list">{runItems.map((run) => <div key={run.id}><div><strong>{run.topic_name || run.topic_id || '全批次分析'}</strong><small>{run.provider_label || run.model || run.engine || '分析引擎未标注'} · {formatDateTime(run.created_at || run.started_at)}</small></div><Badge tone={statusTone(run.status)}>{statusLabel(run.status)}</Badge></div>)}{!runItems.length && <EmptyState icon={SlidersHorizontal} title="尚无分析运行" description="由核心课题组启动全批次或指定专题的机器判定。" />}</div></Panel><Panel title="已确认统计" subtitle="以人工研判状态聚合"><div className="review-count-grid">{Object.entries(counts).filter(([, value]) => typeof value === 'number').map(([key, value]) => <div key={key}><span>{statusLabel(key.toUpperCase())}</span><strong>{formatNumber(value)}</strong></div>)}{!Object.keys(counts).length && <p className="muted">确认数量将在人工提交研判后显示。</p>}</div></Panel></div><Panel title="机器候选列表" subtitle="候选仅代表机器判定，点击后进入人工研判" action={<Badge>{candidateItems.length} 条</Badge>}><div className="analysis-candidate-list">{candidateItems.map((analysis, index) => <AnalysisCandidate key={analysis.id || analysis.analysis_id || index} analysis={analysis} onReview={() => setSelected(analysis)} />)}{!candidateItems.length && <EmptyState icon={FileSearch} title="没有机器候选" description="启动分析后，这里将显示模型输出及其证据片段。" />}</div></Panel><Panel title="人工研判队列" subtitle="依据原始记录和机器理由完成最终结论" action={<Badge tone="warning">{queueItems.length} 条待办</Badge>}><div className="analysis-queue-list">{queueItems.map((item, index) => <article key={item.analysis?.id || item.analysis_id || item.record?.id || index}><div><Badge tone={statusTone(item.analysis?.workflow || item.analysis?.status)}>{statusLabel(item.analysis?.workflow || item.analysis?.status || 'PENDING_HUMAN_REVIEW')}</Badge><strong>{item.record?.title || item.analysis?.record_title || '待研判记录'}</strong><small>{item.record?.summary || item.analysis?.machine_reason || '打开研判抽屉查看证据与机器依据。'}</small></div><Button variant="secondary" disabled={role !== 'core'} title={role !== 'core' ? '研究员视角为只读' : ''} onClick={() => setSelected({ ...item.analysis, record: item.record })}>人工研判</Button></article>)}{!queueItems.length && <EmptyState icon={CheckCircle2} title="人工队列已清空" description="当前没有需要提交人工结论的机器候选。" />}</div></Panel>{selected && <HumanReviewDrawer analysis={selected} role={role} onClose={() => setSelected(null)} onSaved={(payload) => { setSelected(null); setMessage(`人工研判已保存：${statusLabel(payload.workflow || payload.status)}。`); reloadAll() }} />}</div>
+}
+
+function AnalysisCandidate({ analysis, onReview }) {
+  const record = analysis.record || {}; const field = (...keys) => keys.map((key) => analysis[key] ?? record[key]).find((value) => value !== undefined && value !== null && value !== '')
+  const snippets = field('evidence_snippets')
+  const evidence = field('evidence_snippet', 'evidence', 'excerpt') || (Array.isArray(snippets) ? snippets[0] : '')
+  return <article className="analysis-candidate"><div className="analysis-candidate-head"><div><Badge tone={statusTone(field('workflow', 'status'))}>{statusLabel(field('workflow', 'status', 'MACHINE_CANDIDATE'))}</Badge><strong>{field('record_title', 'title') || '未命名记录'}</strong><small>{field('provider_label', 'model', 'engine') || '机器引擎未标注'}</small></div><Button variant="secondary" onClick={onReview}>人工研判</Button></div><div className="analysis-facts"><span>情感：{field('machine_sentiment', 'sentiment') || '未标注'}</span><span>立场：{field('machine_stance', 'stance') || '未标注'}</span><span>风险：{field('machine_risk_level', 'risk_level', 'risk') || '未标注'}</span><span>置信度：{field('confidence', 'machine_confidence') ?? '未标注'}</span></div><p>{field('machine_reason', 'narrative', 'reason', 'rationale') || '未提供机器判定理由。'}</p>{evidence && <div className="evidence-snippet"><FileCheck2 size={14} />{evidence}</div>}</article>
+}
+
+function HumanReviewDrawer({ analysis, role, onClose, onSaved }) {
+  useEscapeClose(onClose)
+  const [decision, setDecision] = useState('HUMAN_CONFIRMED'); const [note, setNote] = useState(''); const [sentiment, setSentiment] = useState(analysis.machine_sentiment || analysis.sentiment || ''); const [risk, setRisk] = useState(analysis.machine_risk_level || analysis.risk_level || analysis.risk || ''); const [summary, setSummary] = useState(''); const [saving, setSaving] = useState(false); const [error, setError] = useState('')
+  const needsRevision = decision === 'HUMAN_REVISED'
+  const submit = async (event) => {
+    event.preventDefault(); if (!note.trim()) { setError('请填写人工研判备注，说明证据与判断依据。'); return }
+    setSaving(true); setError('')
+    try { const payload = await api.patch(`/api/analysis/${encodeURIComponent(analysis.id || analysis.analysis_id)}/review`, { role, decision, review_note: note.trim(), ...(needsRevision ? { human_sentiment: sentiment, human_risk_level: risk, human_summary: summary.trim() } : {}) }); onSaved(payload) } catch (submitError) { setError(submitError.message || '提交人工研判失败') } finally { setSaving(false) }
+  }
+  return <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside className="drawer wide" role="dialog" aria-modal="true" aria-label="人工研判"><div className="drawer-header"><div><span>机器候选 · {analysis.id || analysis.analysis_id}</span><h2>人工研判</h2></div><button className="icon-btn" onClick={onClose} aria-label="关闭人工研判"><X size={19} /></button></div><form className="drawer-body action-form" onSubmit={submit}><div className="action-subject"><Badge>{analysis.provider_label || analysis.model || '机器判定'}</Badge><strong>{analysis.record?.title || analysis.record_title || '待研判记录'}</strong><p>{analysis.machine_reason || analysis.reason || '请基于原始记录和证据片段完成研判。'}</p></div><label className="form-field"><span>研判决定</span><select value={decision} onChange={(event) => setDecision(event.target.value)} disabled={role !== 'core'}><option value="HUMAN_CONFIRMED">确认机器判定</option><option value="HUMAN_REVISED">修订机器判定</option><option value="HUMAN_REJECTED">驳回机器判定</option><option value="NEEDS_MORE_EVIDENCE">补充证据</option></select></label>{needsRevision && <><label className="form-field"><span>人工情感</span><input value={sentiment} onChange={(event) => setSentiment(event.target.value)} placeholder="例如：正面 / 中性 / 负面" /></label><label className="form-field"><span>人工风险等级</span><input value={risk} onChange={(event) => setRisk(event.target.value)} placeholder="例如：低 / 中 / 高" /></label><label className="form-field"><span>人工摘要</span><textarea rows="4" value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="概括人工修订后的判断" /></label></>}<label className="form-field"><span>人工研判备注（必填）</span><textarea required rows="6" value={note} onChange={(event) => setNote(event.target.value)} placeholder="说明依据、判断过程及需要跟进的事项" /></label>{error && <Notice tone="danger">{error}</Notice>}<div className="form-actions"><Button variant="secondary" onClick={onClose}>取消</Button><Button type="submit" icon={CheckCircle2} disabled={role !== 'core' || saving}>{saving ? '提交中…' : '提交人工研判'}</Button></div></form></aside></div>
 }
 
 function AlertsPage({ role }) {
@@ -667,9 +822,10 @@ function AlertActionDrawer({ item, role, onClose, onSaved }) {
   return <div className="drawer-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><aside className="drawer" role="dialog" aria-modal="true" aria-label="风险线索核验处置"><div className="drawer-header"><div><span>测试规则命中 · {item.id}</span><h2>核验处置</h2></div><button className="icon-btn" onClick={onClose} aria-label="关闭核验处置"><X size={19} /></button></div><form className="drawer-body action-form" onSubmit={submit}><div className="action-subject"><Badge tone="warning">{item.risk}</Badge><strong>{item.title}</strong><p>{item.summary}</p></div><label className="form-field"><span>处置状态</span><select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}><option value="PENDING">待处理</option><option value="ACKNOWLEDGED">已确认</option><option value="RESOLVED">已完成</option></select></label><label className="form-field"><span>负责人</span><input maxLength="80" value={form.assignee} onChange={(event) => setForm((current) => ({ ...current, assignee: event.target.value }))} placeholder="填写核验负责人" /></label><label className="form-field"><span>核验备注</span><textarea maxLength="1000" rows="7" value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} placeholder="记录核验依据、判断和后续动作" /></label><Notice tone="info" icon={Info}>处置只更新测试线索工作流状态，不会把规则命中自动标记为已核实事实。</Notice>{error && <Notice tone="danger" icon={CircleAlert}>{error}</Notice>}<div className="form-actions"><Button variant="secondary" onClick={onClose}>取消</Button><Button type="submit" icon={CheckCircle2} disabled={saving}>{saving ? '提交中…' : '提交处置'}</Button></div></form></aside></div>
 }
 
-function ReportsPage({ role }) {
+function ReportsPage({ role, initialFocus = '' }) {
   const templates = useLoad(() => api.get('/api/reports/templates'), [])
-  const [template, setTemplate] = useState('validation'); const [focus, setFocus] = useState(''); const [report, setReport] = useState(null); const [generating, setGenerating] = useState(false); const [error, setError] = useState('')
+  const [template, setTemplate] = useState('validation'); const [focus, setFocus] = useState(initialFocus); const [report, setReport] = useState(null); const [generating, setGenerating] = useState(false); const [error, setError] = useState('')
+  useEffect(() => setFocus(initialFocus), [initialFocus])
   const generate = async () => { setGenerating(true); setError(''); try { setReport(await api.post('/api/reports/generate', { template, focus, role })) } catch (generateError) { setError(generateError.message) } finally { setGenerating(false) } }
   const download = () => {
     if (!report) return
@@ -681,7 +837,7 @@ function ReportsPage({ role }) {
   if (templates.loading && !templates.data) return <LoadingPanel />
   if (templates.error) return <ErrorPanel message={templates.error} onRetry={templates.reload} />
   const publicReport = report?.status === 'GENERATED_FROM_PUBLIC_WEB_SAMPLE'
-  return <div className="page-stack"><PageHeader eyebrow="输出与治理 / REPORTS" title="报告中心" description="按当前活动批次生成结构化报告，并保留检索引用和证据边界。" /><div className="report-layout"><Panel title="生成设置" subtitle="报告由结构化规则生成，不调用生成式大模型"><div className="template-grid">{(templates.data.items || []).map((item) => <button key={item.id} className={template === item.id ? 'active' : ''} onClick={() => setTemplate(item.id)}><FileText size={18} /><div><strong>{item.name}</strong><span>{item.description}</span></div>{template === item.id && <Check size={16} />}</button>)}</div><label className="form-field"><span>检索焦点（可选）</span><input maxLength="500" value={focus} onChange={(event) => setFocus(event.target.value)} placeholder="例如人物、事件或主题关键词" /></label><Button icon={FileStack} onClick={generate} disabled={generating}>{generating ? '生成中…' : '生成报告'}</Button>{error && <Notice tone="danger">{error}</Notice>}</Panel><Panel title="报告预览" subtitle={report ? report.status : '尚未生成'} action={report && <Button variant="secondary" icon={ArrowDownToLine} onClick={download}>下载 Markdown</Button>}>{!report ? <EmptyState icon={FileText} title="选择模板并生成报告" description="生成结果将出现在这里。" /> : <article className="report-preview"><div className="report-cover"><span>{publicReport ? '公开网页样本报告' : '结构化测试报告'}</span><h2>{report.title}</h2><p>{report.notice}</p></div>{report.sections.map((section) => <section key={section.title}><h3>{section.title}</h3><p>{section.content}</p></section>)}{report.citations?.length > 0 && <section><h3>引用记录</h3>{report.citations.map((item, index) => <div className="report-citation" key={item.record_id}><span>{index + 1}</span><div><strong>{item.title}</strong><small>{(item.source_refs || []).join(' · ')} · {evidenceLabel(item.evidence_type)} · SHA-256 {shorten(item.content_hash, 16)}</small></div></div>)}</section>}</article>}</Panel></div></div>
+  return <div className="page-stack"><PageHeader eyebrow="输出与治理 / REPORTS" title="报告中心" description="按当前活动批次生成结构化报告，并保留检索引用和证据边界。" /><div className="report-layout"><Panel title="生成设置" subtitle="报告由结构化规则生成，不调用生成式大模型"><div className="template-grid">{(templates.data.items || []).map((item) => <button key={item.id} className={template === item.id ? 'active' : ''} onClick={() => setTemplate(item.id)}><FileText size={18} /><div><strong>{item.name}</strong><span>{item.description}</span></div>{template === item.id && <Check size={16} />}</button>)}</div><label className="form-field"><span>检索焦点（可选）</span><input maxLength="500" value={focus} onChange={(event) => setFocus(event.target.value)} placeholder="例如人物、事件或主题关键词" /></label><Button icon={FileStack} onClick={generate} disabled={generating}>{generating ? '生成中…' : '生成报告'}</Button>{error && <Notice tone="danger">{error}</Notice>}</Panel><Panel title="报告预览" subtitle={report ? report.status : '尚未生成'} action={report && <Button variant="secondary" icon={ArrowDownToLine} onClick={download}>下载 Markdown</Button>}>{!report ? <EmptyState icon={FileText} title="选择模板并生成报告" description="生成结果将出现在这里。" /> : <article className="report-preview"><div className="report-cover"><span>{publicReport ? '公开网页样本报告' : '结构化测试报告'}</span><h2>{report.title}</h2><p>{report.notice}</p><div className="report-workflow-counts"><span>人工确认 <strong>{formatNumber(report.verified_count ?? report.confirmed_count ?? 0)}</strong></span><span>已排除 <strong>{formatNumber(report.excluded_count ?? report.rejected_count ?? 0)}</strong></span></div></div>{report.sections.map((section) => <section key={section.title}><h3>{section.title}</h3><p>{section.content}</p></section>)}{report.citations?.length > 0 && <section><h3>引用记录</h3>{report.citations.map((item, index) => <div className="report-citation" key={item.record_id}><span>{index + 1}</span><div><strong>{item.title}</strong><small>{(item.source_refs || []).join(' · ')} · {evidenceLabel(item.evidence_type)} · SHA-256 {shorten(item.content_hash, 16)}</small></div></div>)}</section>}</article>}</Panel></div></div>
 }
 
 function ObjectsPage({ role }) {
