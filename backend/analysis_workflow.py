@@ -263,13 +263,21 @@ def latest_reviews(conn: Any, analysis_ids: list[str]) -> dict[str, dict[str, An
 
 def queue_counts(conn: Any, record_ids: list[str] | None = None) -> dict[str, int]:
     args: list[Any] = []
-    where = ""
+    conditions = [
+        "ma.rowid = (SELECT latest.rowid FROM machine_analysis latest "
+        "WHERE latest.record_id=ma.record_id "
+        "ORDER BY latest.created_at DESC, latest.rowid DESC LIMIT 1)"
+    ]
     if record_ids is not None:
         if not record_ids:
             return {}
-        where = " WHERE record_id IN (" + ",".join("?" for _ in record_ids) + ")"
+        conditions.append("ma.record_id IN (" + ",".join("?" for _ in record_ids) + ")")
         args.extend(record_ids)
-    rows = conn.execute(f"SELECT status,COUNT(*) AS count FROM machine_analysis{where} GROUP BY status", args).fetchall()
+    where = " WHERE " + " AND ".join(conditions)
+    rows = conn.execute(
+        f"SELECT ma.status,COUNT(*) AS count FROM machine_analysis ma{where} GROUP BY ma.status",
+        args,
+    ).fetchall()
     return {str(row["status"]): int(row["count"]) for row in rows}
 
 
@@ -278,7 +286,15 @@ def verified_report_summary(conn: Any, record_ids: list[str]) -> dict[str, Any]:
         return {"verified_count": 0, "excluded_count": 0, "items": []}
     placeholders = ",".join("?" for _ in record_ids)
     analyses = rows_to_dicts(conn.execute(
-        f"SELECT * FROM machine_analysis WHERE record_id IN ({placeholders}) ORDER BY created_at DESC", record_ids
+        f"""SELECT ma.* FROM machine_analysis ma
+              WHERE ma.record_id IN ({placeholders})
+                AND ma.rowid = (
+                    SELECT latest.rowid FROM machine_analysis latest
+                    WHERE latest.record_id=ma.record_id
+                    ORDER BY latest.created_at DESC, latest.rowid DESC LIMIT 1
+                )
+              ORDER BY ma.created_at DESC, ma.rowid DESC""",
+        record_ids,
     ).fetchall())
     reviews = latest_reviews(conn, [str(item["id"]) for item in analyses])
     items: list[dict[str, Any]] = []
@@ -297,7 +313,7 @@ def verified_report_summary(conn: Any, record_ids: list[str]) -> dict[str, Any]:
             "analysis_id": analysis["id"], "record_id": record_id, "decision": review["decision"],
             "reviewer": review["reviewer"], "sentiment": review["sentiment"] or analysis["sentiment"],
             "risk_level": review["risk_level"] or analysis["risk_level"],
-            "narrative": review["narrative"] or analysis["narrative"],
+            "narrative": review["narrative"] or review["note"] or analysis["narrative"],
         })
     excluded += max(0, len(record_ids) - len(seen_records))
     return {"verified_count": len(items), "excluded_count": excluded, "items": items}

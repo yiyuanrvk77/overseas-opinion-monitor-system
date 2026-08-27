@@ -150,6 +150,43 @@ class AnalysisWorkflowTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 422, response.text)
 
+    def test_latest_machine_version_controls_queue_detail_and_report(self):
+        self.client.post("/api/analysis/runs", json={"topic": "APEC 2026", "role": "core"})
+        first_queue = self.client.get("/api/analysis/queue?role=core").json()
+        target = first_queue["items"][0]["analysis"]
+        confirmed = self.client.patch(
+            f"/api/analysis/{target['id']}/review",
+            json={"decision": "HUMAN_CONFIRMED", "review_note": "旧版本人工确认", "role": "core"},
+        )
+        self.assertEqual(confirmed.status_code, 200, confirmed.text)
+        with database.db() as conn:
+            conn.execute(
+                "UPDATE machine_analysis SET model=?,engine_version=? WHERE id=?",
+                ("auditable-lexicon-v1", "auditable-lexicon-v1:overseas-opinion-analysis-v1", target["id"]),
+            )
+
+        rerun = self.client.post("/api/analysis/runs", json={"topic": "APEC 2026", "role": "core"})
+        self.assertEqual(rerun.status_code, 200, rerun.text)
+        self.assertEqual(rerun.json()["created_count"], 1)
+
+        latest_queue = self.client.get("/api/analysis/queue?role=core").json()
+        self.assertEqual(latest_queue["counts"]["machine_count"], first_queue["counts"]["machine_count"])
+        latest_target = next(
+            item for item in latest_queue["analyses"]
+            if item["analysis"]["record_id"] == target["record_id"]
+        )
+        self.assertEqual(latest_target["analysis"]["model"], "auditable-lexicon-v2")
+        self.assertEqual(latest_target["analysis"]["workflow"], "PENDING_HUMAN_REVIEW")
+
+        detail = self.client.get(f"/api/records/{target['record_id']}/analysis?role=core").json()
+        self.assertEqual(detail["current_analysis"]["model"], "auditable-lexicon-v2")
+        self.assertIsNone(detail["current_review"])
+        self.assertIsNone(detail["final_conclusion"])
+        self.assertEqual(len(detail["analyses"]), 2)
+
+        report = self.client.post("/api/reports/generate", json={"template": "topic", "role": "core"}).json()
+        self.assertEqual(report["verified_count"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

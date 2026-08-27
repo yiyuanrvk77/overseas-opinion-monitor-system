@@ -814,12 +814,22 @@ def analysis(role: RoleName = "researcher", topic_id: str = "") -> dict:
         workflow_counts = queue_counts(conn, record_ids)
         workflow_report = verified_report_summary(conn, record_ids)
         analysis_rows = rows_to_dicts(conn.execute(
-            "SELECT id FROM machine_analysis WHERE record_id IN (" + ",".join("?" for _ in record_ids) + ")",
+            """SELECT ma.id,ma.status FROM machine_analysis ma
+                 WHERE ma.record_id IN (""" + ",".join("?" for _ in record_ids) + """)
+                   AND ma.rowid = (
+                       SELECT latest.rowid FROM machine_analysis latest
+                       WHERE latest.record_id=ma.record_id
+                       ORDER BY latest.created_at DESC, latest.rowid DESC LIMIT 1
+                   )""",
             record_ids,
         ).fetchall()) if record_ids else []
         reviews = latest_reviews(conn, [str(item["id"]) for item in analysis_rows])
         review_counts = Counter(str(item["decision"]) for item in reviews.values())
         machine_count = sum(workflow_counts.values())
+        pending_human_review = sum(
+            1 for item in analysis_rows
+            if item["status"] == MACHINE_CANDIDATE and str(item["id"]) not in reviews
+        )
     return {
         "topics": [{"name": name, "count": count} for name, count in topics.most_common(18)],
         "evidence": [{"type": name, "count": count} for name, count in evidence.most_common()],
@@ -842,7 +852,7 @@ def analysis(role: RoleName = "researcher", topic_id: str = "") -> dict:
         "workflow": {
             "machine_status_counts": workflow_counts,
             "machine_count": machine_count,
-            "pending_human_review": max(0, machine_count - len(reviews)),
+            "pending_human_review": pending_human_review,
             "human_confirmed": review_counts.get("HUMAN_CONFIRMED", 0) + review_counts.get("HUMAN_REVISED", 0),
             "verified_count": workflow_report["verified_count"],
             "excluded_count": workflow_report["excluded_count"],
