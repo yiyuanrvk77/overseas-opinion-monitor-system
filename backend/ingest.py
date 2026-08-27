@@ -13,6 +13,7 @@ from typing import Any
 from . import database as database_module
 from .database import (
     ROOT,
+    set_active_batch,
     append_audit_block,
     db,
     ensure_knowledge_chunk_constraint,
@@ -252,9 +253,16 @@ def _version_identity(meta: dict, snapshot_hash: str) -> tuple[str, str]:
 
 def index_integrity(conn, batch_id: int | None = None, version_id: str | None = None) -> dict:
     if batch_id is None:
-        batch = conn.execute(
-            "SELECT id FROM dataset_batch ORDER BY updated_at DESC,id DESC LIMIT 1"
+        active = conn.execute(
+            "SELECT value FROM workspace_setting WHERE key='active_batch_code'"
         ).fetchone()
+        batch = conn.execute(
+            "SELECT id FROM dataset_batch WHERE code=?", (active["value"],)
+        ).fetchone() if active else None
+        if not batch:
+            batch = conn.execute(
+                "SELECT id FROM dataset_batch ORDER BY updated_at DESC,id DESC LIMIT 1"
+            ).fetchone()
         if not batch:
             return {"complete": False, "record_count": 0, "chunk_count": 0, "issues": ["missing_batch"]}
         batch_id = int(batch["id"])
@@ -413,6 +421,13 @@ def _ingest_snapshot_unlocked(snapshot_path: Path | None = None, db_path: Path |
             category_counts[category] += 1
 
     with db(db_path) as conn:
+        # The first imported batch becomes active.  A later public/demo import
+        # can explicitly switch the workbench without startup re-ingest
+        # silently taking it back.
+        if not conn.execute(
+            "SELECT 1 FROM workspace_setting WHERE key='active_batch_code'"
+        ).fetchone():
+            set_active_batch(conn, BATCH_CODE)
         existing = conn.execute(
             "SELECT id,checksum,record_count,metadata_json FROM dataset_batch WHERE code=?",
             (BATCH_CODE,),

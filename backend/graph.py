@@ -9,7 +9,7 @@ from typing import Any
 
 import networkx as nx
 
-from .database import ROOT, db, verify_audit_chain
+from .database import ROOT, active_batch_code, db, verify_audit_chain
 
 
 SNAPSHOT_PATH = ROOT / "src" / "zipSnapshot.json"
@@ -69,7 +69,10 @@ def _same_person(left: str, right: str) -> bool:
 
 def _snapshot_from_database(db_path: Path | None = None) -> dict:
     with db(db_path) as conn:
-        batch = conn.execute("SELECT * FROM dataset_batch ORDER BY updated_at DESC,id DESC LIMIT 1").fetchone()
+        selected_code = active_batch_code(conn)
+        batch = conn.execute("SELECT * FROM dataset_batch WHERE code=?", (selected_code,)).fetchone() if selected_code else None
+        if not batch:
+            batch = conn.execute("SELECT * FROM dataset_batch ORDER BY updated_at DESC,id DESC LIMIT 1").fetchone()
         if not batch:
             raise ValueError("数据库中没有可用于建图的数据批次")
         rows = conn.execute(

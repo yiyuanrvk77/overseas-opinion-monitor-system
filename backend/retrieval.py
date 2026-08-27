@@ -7,7 +7,7 @@ import struct
 from collections import Counter
 from pathlib import Path
 
-from .database import db
+from .database import active_batch_code, db
 from .features import DIMENSIONS, cosine, feature_vector, tokenize, unpack_vector
 from .semantic import semantic_engine
 
@@ -164,21 +164,32 @@ def search(
     embedding_model = ""
     allowed = _allowed_sensitivity(role)
     placeholders = ",".join("?" for _ in allowed)
-    sql = f"""
-        SELECT kc.id AS chunk_id,kc.text,kc.tokens_json,kc.vector,kc.dimensions,
-               sr.id AS record_id,sr.category,sr.title,sr.summary,sr.evidence_type,
-               sr.source_refs_json,sr.sensitivity,sr.content_hash,
-               db.code AS batch_code,db.source_date
-        FROM knowledge_chunk kc
-        JOIN source_record sr ON sr.id=kc.record_id
-        JOIN dataset_batch db ON db.id=sr.batch_id
-        WHERE sr.sensitivity IN ({placeholders})
-    """
-    args: list[object] = list(allowed)
-    if category:
-        sql += " AND sr.category=?"
-        args.append(category)
     with db(db_path) as conn:
+        current_batch_code = active_batch_code(conn)
+        if not current_batch_code:
+            return {
+                "query": query,
+                "results": [],
+                "result_count": 0,
+                "margin": 0.0,
+                "retrieval_mode": "hybrid_lexical_offline_feature_vector",
+                "invalid_vector_count": 0,
+                "notice": "当前没有可检索的数据批次。",
+            }
+        sql = f"""
+            SELECT kc.id AS chunk_id,kc.text,kc.tokens_json,kc.vector,kc.dimensions,
+                   sr.id AS record_id,sr.category,sr.title,sr.summary,sr.evidence_type,
+                   sr.source_refs_json,sr.sensitivity,sr.content_hash,
+                   db.code AS batch_code,db.source_date
+            FROM knowledge_chunk kc
+            JOIN source_record sr ON sr.id=kc.record_id
+            JOIN dataset_batch db ON db.id=sr.batch_id
+            WHERE db.code=? AND sr.sensitivity IN ({placeholders})
+        """
+        args: list[object] = [current_batch_code, *allowed]
+        if category:
+            sql += " AND sr.category=?"
+            args.append(category)
         rows = conn.execute(sql, args).fetchall()
 
     results = []

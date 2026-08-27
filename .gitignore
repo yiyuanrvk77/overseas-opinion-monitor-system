@@ -1,7 +1,7 @@
 node_modules/
 .venv/
 venv-linux/
-dist/
+# Production static assets are tracked so a Linux host does not need Node.js.
 backend/data/*.db
 backend/data/*.db-*
 backend/data/*.db.*

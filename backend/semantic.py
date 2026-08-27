@@ -182,7 +182,9 @@ class SemanticEngine:
         model = self.model_for_dimension(dimension)
         spec = MODELS.get(model, MODELS["local"])
         if spec["provider"] == "local":
-            return self.local_embedding(text, dimension), True, "local", spec["model"]
+            # The vector remains usable, but ``active`` means a real semantic
+            # provider was used. Keep local feature vectors out of that claim.
+            return self.local_embedding(text, dimension), False, "local", spec["model"]
         if not self._api_key(model):
             return None, False, "-", spec["model"]
         value = self._embed_one(text, model)

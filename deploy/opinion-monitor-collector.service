@@ -1,0 +1,16 @@
+[Unit]
+Description=Refresh public overseas-opinion metadata snapshot
+After=network-online.target opinion-monitor.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/overseas-opinion-monitor
+User=opinion
+Group=opinion
+EnvironmentFile=-/etc/opinion-monitor.env
+ExecStart=/opt/overseas-opinion-monitor/.venv/bin/python scripts/collect_public_web.py --timeout 18 --limit 24
+ExecStart=/opt/overseas-opinion-monitor/.venv/bin/python scripts/import_public_demo.py --db /opt/overseas-opinion-monitor/backend/data/opinion_monitor.db
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true

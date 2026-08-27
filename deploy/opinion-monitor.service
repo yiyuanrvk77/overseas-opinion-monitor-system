@@ -8,6 +8,8 @@ Type=simple
 WorkingDirectory=/opt/overseas-opinion-monitor
 User=opinion
 Group=opinion
+# 可选认证密钥放在 0600 权限的独立文件中，不提交到仓库
+EnvironmentFile=-/etc/opinion-monitor.env
 # 服务监听本机回环，再由 nginx 反代或直接限制内网访问
 Environment=HOST=127.0.0.1
 Environment=PORT=8000

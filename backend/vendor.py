@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 
 from .database import db, init_db, now_iso, rows_to_dicts
@@ -84,12 +85,14 @@ VENDORS: dict[str, DataVendor] = {
 
 
 def list_vendors() -> list[dict]:
+    mock_enabled = os.getenv("OPINION_MONITOR_ENABLE_MOCK_VENDOR", "").strip() == "1"
     return [
         {
             "id": name,
             "name": name,
             "type": "mock" if isinstance(v, MockVendor) else "http",
-            "status": "READY" if isinstance(v, MockVendor) else "NOT_CONFIGURED",
+            "status": "DEMO_ONLY" if isinstance(v, MockVendor) and mock_enabled else "DISABLED" if isinstance(v, MockVendor) else "NOT_CONFIGURED",
+            "demo_only": isinstance(v, MockVendor),
             "platforms": PLATFORMS,
         }
         for name, v in VENDORS.items()
@@ -101,6 +104,8 @@ def fetch_and_store(query: dict, vendor_name: str = "mock") -> dict:
     vendor = VENDORS.get(vendor_name)
     if vendor is None:
         raise ValueError(f"未知数据商：{vendor_name}")
+    if isinstance(vendor, MockVendor) and os.getenv("OPINION_MONITOR_ENABLE_MOCK_VENDOR", "").strip() != "1":
+        raise ValueError("模拟数据商默认关闭；正式页面请使用公开网页批次或已授权供应商连接器")
     ts = now_iso()
     raw_items = vendor.fetch(query)
     normalized = [normalize(item, vendor_name, ts) for item in raw_items]

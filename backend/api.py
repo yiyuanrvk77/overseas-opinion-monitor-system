@@ -1,22 +1,26 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import hashlib
 import logging
 import logging.handlers
 import os
+import secrets
 from collections import Counter
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .database import (
     ROOT,
+    active_batch_code,
     append_audit_block,
     audit_checkpoint_matches,
     db,
@@ -27,6 +31,13 @@ from .database import (
 )
 from .graph import build_graph
 from .ingest import BATCH_CODE, COLLECTION_ID, batch_summary, index_integrity, ingest_snapshot
+from .public_demo import (
+    PUBLIC_BATCH_CODE,
+    public_demo_status,
+    public_demo_topic,
+    public_demo_topics,
+    import_public_demo,
+)
 from .retrieval import CATEGORY_LABELS, answer, search
 from .classification import list_items as classification_list_items
 from .classification import list_objects as classification_list_objects
@@ -41,6 +52,17 @@ from .semantic import MODELS as SEMANTIC_MODELS
 
 RoleName = Literal["core", "researcher"]
 GraphView = Literal["actors", "events", "propagation", "evidence"]
+
+AUTH_MODE_ENV = "OPINION_MONITOR_AUTH_MODE"
+BASIC_USERS_ENV = "OPINION_MONITOR_BASIC_USERS"
+CORE_ONLY_ROUTES = (
+    ("POST", "/api/collection/tasks", False),
+    ("PATCH", "/api/collection/tasks/", True),
+    ("POST", "/api/collection/fetch", False),
+    ("POST", "/api/public-demo/refresh", False),
+    ("PATCH", "/api/alerts/", True),
+    ("POST", "/api/vectors/rebuild", False),
+)
 
 
 def _setup_logging() -> None:
@@ -59,6 +81,90 @@ def _setup_logging() -> None:
     root.setLevel(logging.INFO)
     root.addHandler(handler)
     logging.getLogger("uvicorn.access").addHandler(handler)
+
+
+def _auth_mode() -> str:
+    return os.environ.get(AUTH_MODE_ENV, "off").strip().lower() or "off"
+
+
+def _basic_users() -> tuple[dict[str, dict[str, str]], str | None]:
+    """Load credentials at request time so secret rotation needs no code change."""
+    raw_users = os.environ.get(BASIC_USERS_ENV, "").strip()
+    if raw_users:
+        try:
+            parsed = json.loads(raw_users)
+        except json.JSONDecodeError:
+            return {}, f"{BASIC_USERS_ENV} 不是有效 JSON"
+        if not isinstance(parsed, dict) or not parsed:
+            return {}, f"{BASIC_USERS_ENV} 必须是非空对象"
+        users: dict[str, dict[str, str]] = {}
+        for username, entry in parsed.items():
+            if not isinstance(username, str) or not username or not isinstance(entry, dict):
+                return {}, f"{BASIC_USERS_ENV} 的账号配置无效"
+            password = entry.get("password")
+            role = entry.get("role", "researcher")
+            if not isinstance(password, str) or not password or role not in {"core", "researcher"}:
+                return {}, f"{BASIC_USERS_ENV} 的密码或角色配置无效"
+            users[username] = {"password": password, "role": role}
+        return users, None
+
+    username = os.environ.get("OPINION_MONITOR_BASIC_USERNAME", "").strip()
+    password = os.environ.get("OPINION_MONITOR_BASIC_PASSWORD", "")
+    role = os.environ.get("OPINION_MONITOR_BASIC_ROLE", "researcher").strip().lower()
+    if username and password and role in {"core", "researcher"}:
+        return {username: {"password": password, "role": role}}, None
+    return {}, (
+        "Basic Auth 已启用，但未配置 OPINION_MONITOR_BASIC_USERS，"
+        "或未完整配置单账号用户名、密码和角色"
+    )
+
+
+def _basic_identity(authorization: str, users: dict[str, dict[str, str]]) -> tuple[str, str] | None:
+    try:
+        scheme, encoded = authorization.split(" ", 1)
+        if scheme.lower() != "basic":
+            return None
+        decoded = base64.b64decode(encoded.strip(), validate=True).decode("utf-8")
+        username, password = decoded.split(":", 1)
+    except (ValueError, UnicodeDecodeError, binascii.Error):
+        return None
+
+    identity: tuple[str, str] | None = None
+    for configured_username, entry in users.items():
+        username_matches = secrets.compare_digest(username.encode("utf-8"), configured_username.encode("utf-8"))
+        password_matches = secrets.compare_digest(password.encode("utf-8"), entry["password"].encode("utf-8"))
+        if username_matches and password_matches:
+            identity = (configured_username, entry["role"])
+    return identity
+
+
+def _core_only_route(method: str, path: str) -> bool:
+    return any(
+        method == expected_method and (path.startswith(route) if prefix else path == route)
+        for expected_method, route, prefix in CORE_ONLY_ROUTES
+    )
+
+
+async def _requested_roles(request: Request) -> set[str]:
+    roles = {value.lower() for value in request.query_params.getlist("role")}
+    content_type = request.headers.get("content-type", "").lower()
+    if request.method in {"POST", "PUT", "PATCH"} and "application/json" in content_type:
+        raw_body = await request.body()
+        if raw_body:
+            try:
+                payload = json.loads(raw_body)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                payload = None
+            if isinstance(payload, dict) and isinstance(payload.get("role"), str):
+                roles.add(payload["role"].lower())
+    return roles
+
+
+def _auth_response(status_code: int, detail: str, *, challenge: bool = False) -> JSONResponse:
+    headers = {"Cache-Control": "no-store"}
+    if challenge:
+        headers["WWW-Authenticate"] = 'Basic realm="Opinion Monitor", charset="UTF-8"'
+    return JSONResponse(status_code=status_code, content={"detail": detail}, headers=headers)
 
 
 class RebuildVectorsRequest(BaseModel):
@@ -80,6 +186,36 @@ app = FastAPI(
     version="1.0.0",
     description="社科院海外舆情监测系统 API，提供监测对象、舆情数据、知识库、图谱、研判与报告能力。",
 )
+
+
+@app.middleware("http")
+async def production_authentication(request: Request, call_next):
+    """Optional production perimeter auth; local demo mode remains unchanged."""
+    mode = _auth_mode()
+    if mode in {"off", "disabled", "demo"} or request.method == "OPTIONS":
+        return await call_next(request)
+    if mode != "basic":
+        return _auth_response(503, f"不支持的认证模式：{mode}")
+
+    users, config_error = _basic_users()
+    if config_error:
+        logging.getLogger(__name__).error("Production authentication configuration is invalid: %s", config_error)
+        return _auth_response(503, "服务端认证配置无效，请联系管理员")
+    identity = _basic_identity(request.headers.get("authorization", ""), users)
+    if identity is None:
+        return _auth_response(401, "需要有效的服务端账号", challenge=True)
+
+    username, authenticated_role = identity
+    requested_roles = await _requested_roles(request)
+    if authenticated_role != "core" and (
+        "core" in requested_roles or _core_only_route(request.method, request.url.path)
+    ):
+        return _auth_response(403, "当前账号没有核心课题组权限")
+    request.state.authenticated_user = username
+    request.state.authenticated_role = authenticated_role
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
@@ -142,6 +278,10 @@ class VendorFetchRequest(BaseModel):
     vendor: str = "mock"
 
 
+class PublicDemoRefreshRequest(BaseModel):
+    role: RoleName = "researcher"
+
+
 def _json_fields(row: dict, fields: tuple[str, ...]) -> dict:
     for field in fields:
         value = row.pop(f"{field}_json", None)
@@ -193,20 +333,24 @@ def _write_audit(conn, actor: str, action: str, object_type: str, object_id: str
         object_id=str(object_id),
         detail=detail,
         outcome=outcome,
-        batch_id=BATCH_CODE,
+        batch_id=active_batch_code(conn) or BATCH_CODE,
     )
 
 
 def _record_rows(category: str | None = None, role: str = "researcher") -> list[dict]:
     allowed = _allowed(role)
     placeholders = ",".join("?" for _ in allowed)
-    sql = f"SELECT * FROM source_record WHERE sensitivity IN ({placeholders})"
-    args: list[object] = list(allowed)
-    if category:
-        sql += " AND category=?"
-        args.append(category)
-    sql += " ORDER BY category,id"
     with db() as conn:
+        current_batch_id = _latest_batch_id(conn)
+        if not current_batch_id:
+            return []
+        sql = f"""SELECT sr.* FROM source_record sr
+                  WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders})"""
+        args: list[object] = [current_batch_id, *allowed]
+        if category:
+            sql += " AND category=?"
+            args.append(category)
+        sql += " ORDER BY category,id"
         rows = rows_to_dicts(conn.execute(sql, args).fetchall())
     return [_json_fields(row, ("content", "source_refs")) for row in rows]
 
@@ -245,6 +389,18 @@ def _batch_view(conn, code: str = BATCH_CODE, role: str = "researcher") -> dict:
     }
 
 
+def _latest_batch_code(conn) -> str:
+    """Return the most recently updated complete batch for workspace views."""
+    return active_batch_code(conn) or BATCH_CODE
+
+
+def _latest_batch_id(conn) -> int | None:
+    """Return the database id for the batch used by the current workbench view."""
+    code = active_batch_code(conn)
+    row = conn.execute("SELECT id FROM dataset_batch WHERE code=?", (code,)).fetchone() if code else None
+    return int(row["id"]) if row else None
+
+
 @app.on_event("startup")
 def startup() -> None:
     ingest_snapshot()
@@ -281,6 +437,7 @@ def health() -> dict:
         "graph_engine": "networkx",
         "audit_chain": audit_chain,
         "deploy": {"wsgi": "uvicorn-asgi", "worker": "single-process", "db": "sqlite-wal"},
+        "authentication": {"mode": _auth_mode(), "enabled": _auth_mode() == "basic"},
         "version": app.version,
     }
 
@@ -290,27 +447,29 @@ def overview(role: RoleName = "researcher") -> dict:
     allowed = _allowed(role)
     placeholders = ",".join("?" for _ in allowed)
     with db() as conn:
-        summary = _batch_view(conn, role=role)
+        summary = _batch_view(conn, code=_latest_batch_code(conn), role=role)
+        current_batch_id = int(summary.get("id", 0) or 0)
         quality = conn.execute(
             f"""SELECT COUNT(*) FROM quality_issue qi JOIN source_record sr ON sr.id=qi.record_id
-                  WHERE qi.status='OPEN' AND sr.sensitivity IN ({placeholders})""",
-            allowed,
+                  WHERE qi.status='OPEN' AND sr.batch_id=? AND sr.sensitivity IN ({placeholders})""",
+            (current_batch_id, *allowed),
         ).fetchone()[0]
         chunks = conn.execute(
             f"""SELECT COUNT(*) FROM knowledge_chunk kc JOIN source_record sr ON sr.id=kc.record_id
-                  WHERE sr.sensitivity IN ({placeholders})""",
-            allowed,
+                  WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders})""",
+            (current_batch_id, *allowed),
         ).fetchone()[0]
         connectors = conn.execute("SELECT COUNT(*) FROM connector_registry").fetchone()[0]
         ready = conn.execute("SELECT COUNT(*) FROM connector_registry WHERE status='READY'").fetchone()[0]
         evidence = rows_to_dicts(conn.execute(
             f"""SELECT evidence_type,COUNT(*) AS count FROM source_record
-                  WHERE sensitivity IN ({placeholders}) GROUP BY evidence_type ORDER BY count DESC""",
-            allowed,
+                  WHERE batch_id=? AND sensitivity IN ({placeholders}) GROUP BY evidence_type ORDER BY count DESC""",
+            (current_batch_id, *allowed),
         ).fetchall())
     categories = summary.get("category_counts", {})
+    mode = "PUBLIC_WEB_SAMPLE" if summary.get("code") == PUBLIC_BATCH_CODE else "TEST_DATA"
     return {
-        "mode": "TEST_DATA",
+        "mode": mode,
         "batch": summary,
         "metrics": {
             "records": summary.get("record_count", 0),
@@ -325,7 +484,7 @@ def overview(role: RoleName = "researcher") -> dict:
             "hidden_restricted": summary.get("hidden_restricted", 0),
         },
         "evidence_distribution": evidence,
-        "notice": "数据已同步更新，以下为当前监测结果。",
+        "notice": "数据已同步更新，以下为当前监测结果。" if mode == "TEST_DATA" else "当前展示公开网页试采样本；翻译、情感、立场和风险字段待正式模型或人工复核。",
     }
 
 
@@ -391,8 +550,11 @@ def targets(role: RoleName = "researcher") -> dict:
     accounts = _record_rows("account", role)
     account_by_name = {str(item["content"].get("name", "")).lower(): item for item in accounts}
     with db() as conn:
-        source_date = conn.execute("SELECT source_date FROM dataset_batch ORDER BY updated_at DESC,id DESC LIMIT 1").fetchone()
-        total_actors = conn.execute("SELECT COUNT(*) FROM source_record WHERE category='actor'").fetchone()[0]
+        current_batch_id = _latest_batch_id(conn)
+        source_date = conn.execute("SELECT source_date FROM dataset_batch WHERE id=?", (current_batch_id,)).fetchone() if current_batch_id else None
+        total_actors = conn.execute(
+            "SELECT COUNT(*) FROM source_record WHERE batch_id=? AND category='actor'", (current_batch_id,)
+        ).fetchone()[0] if current_batch_id else 0
     items = []
     for actor in actors:
         raw = actor["content"]
@@ -420,14 +582,15 @@ def collection(role: RoleName = "researcher") -> dict:
     placeholders = ",".join("?" for _ in allowed)
     with db() as conn:
         connectors = rows_to_dicts(conn.execute("SELECT * FROM connector_registry ORDER BY channel_type,name").fetchall())
-        batch = _batch_view(conn, role=role)
+        batch = _batch_view(conn, code=_latest_batch_code(conn), role=role)
         tasks = rows_to_dicts(conn.execute("SELECT * FROM collection_task ORDER BY id DESC").fetchall()) if role == "core" else []
+        current_batch_id = int(batch.get("id", 0) or 0)
         chunks = conn.execute(
             f"""SELECT COUNT(*) FROM knowledge_chunk kc JOIN source_record sr ON sr.id=kc.record_id
-                  WHERE sr.sensitivity IN ({placeholders})""",
-            allowed,
+                  WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders})""",
+            (current_batch_id, *allowed),
         ).fetchone()[0]
-        index_state = index_integrity(conn)
+        index_state = index_integrity(conn, batch_id=current_batch_id or None)
     for task in tasks:
         task["media_types"] = json.loads(task.pop("media_types_json"))
         task["languages"] = json.loads(task.pop("languages_json"))
@@ -438,7 +601,15 @@ def collection(role: RoleName = "researcher") -> dict:
         {"id": "index", "name": "知识索引", "status": "COMPLETED" if index_state["complete"] and chunks == batch.get("record_count", 0) else "INCOMPLETE", "value": chunks, "unit": "个向量"},
         {"id": "graph", "name": "关系建图", "status": "COMPLETED", "value": 4, "unit": "个视图"},
     ]
-    return {"connectors": connectors, "batch": batch, "pipeline": pipeline, "tasks": tasks, "notice": "12个平台仅完成连接器注册；正式采集尚未配置，不展示虚构在线数据。"}
+    public_status = public_demo_status(allowed=allowed)
+    return {
+        "connectors": connectors,
+        "batch": batch,
+        "pipeline": pipeline,
+        "tasks": tasks,
+        "public_demo": public_status,
+        "notice": "公开网页试采样本已接入；12个平台连接器仍按授权状态展示，不将样本快照伪装为持续在线采集。",
+    }
 
 
 @app.post("/api/collection/tasks")
@@ -514,6 +685,71 @@ def collection_items(
     return {"items": items, "count": len(items)}
 
 
+@app.get("/api/public-demo/status")
+def public_demo_status_api(role: RoleName = "researcher") -> dict:
+    """Return provenance and availability for the public-web demo batch."""
+
+    return public_demo_status(allowed=_allowed(role))
+
+
+@app.get("/api/public-demo/topics")
+def public_demo_topics_api(role: RoleName = "researcher") -> dict:
+    """Return the three configured demo topics with aggregate counters."""
+
+    allowed = _allowed(role)
+    items = public_demo_topics(allowed=allowed)
+    status = public_demo_status(allowed=allowed)
+    return {
+        "items": items,
+        "count": len(items),
+        "topics": items,
+        "records": items,
+        "status": status,
+        # Keep provenance at the top level for clients that do not unwrap the
+        # status object before rendering the public-sample notice.
+        "platform_access_observations": status.get("platform_access_observations", []),
+    }
+
+
+@app.get("/api/public-demo/topics/{topic:path}")
+def public_demo_topic_api(
+    topic: str,
+    q: str = Query(default="", max_length=300),
+    role: RoleName = "researcher",
+    limit: int = Query(default=200, ge=1, le=500),
+) -> dict:
+    result = public_demo_topic(topic, allowed=_allowed(role), query=q, limit=limit)
+    if result is None:
+        raise HTTPException(404, "重点专题不存在")
+    # Keep both names so older and newer workbench builds can consume the same
+    # endpoint without a migration window.
+    result["records"] = result.get("items", [])
+    result["topics"] = [
+        {
+            "name": result.get("name"),
+            "slug": result.get("slug"),
+            "count": result.get("count", 0),
+        }
+    ]
+    return result
+
+
+@app.post("/api/public-demo/refresh")
+def public_demo_refresh(request: PublicDemoRefreshRequest) -> dict:
+    """Re-import the checked-in public snapshot; only the core role may mutate."""
+
+    _require_core(request.role)
+    try:
+        batch = import_public_demo()
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        raise HTTPException(500, f"公开网页样本导入失败：{exc}") from exc
+    return {
+        "status": "IMPORTED",
+        "batch": batch,
+        "public_demo": public_demo_status(allowed=_allowed(request.role)),
+    }
+
+
 @app.get("/api/analysis")
 def analysis(role: RoleName = "researcher") -> dict:
     records = _record_rows(role=role)
@@ -529,12 +765,25 @@ def analysis(role: RoleName = "researcher") -> dict:
             topics.update(raw.get("topics") or [])
         if record["category"] == "event" and raw.get("risk"):
             risks[str(raw["risk"])] += 1
+    with db() as conn:
+        public_mode = _latest_batch_code(conn) == PUBLIC_BATCH_CODE
     return {
         "topics": [{"name": name, "count": count} for name, count in topics.most_common(18)],
         "evidence": [{"type": name, "count": count} for name, count in evidence.most_common()],
         "risks": [{"level": name, "count": count} for name, count in risks.most_common()],
-        "sentiment": {"status": "NOT_RUN", "reason": "ZIP 未提供人工情感真值；本版不将源文件作者语气判断伪装成模型结论。"},
-        "notice": "主题统计来自源文件标签，仍需结合原始帖子和正式模型复核。",
+        "sentiment": {
+            "status": "NOT_RUN",
+            "reason": (
+                "公开网页样本尚未运行经评测的情感模型；本版不把媒体表述自动包装成情感结论。"
+                if public_mode
+                else "ZIP 未提供人工情感真值；本版不将源文件作者语气判断伪装成模型结论。"
+            ),
+        },
+        "notice": (
+            "主题统计来自公开样本的专题标签，需结合原始链接和正式模型或人工复核。"
+            if public_mode
+            else "主题统计来自源文件标签，仍需结合原始帖子和正式模型复核。"
+        ),
     }
 
 
@@ -543,11 +792,12 @@ def alerts(role: RoleName = "researcher") -> dict:
     allowed = _allowed(role)
     placeholders = ",".join("?" for _ in allowed)
     with db() as conn:
+        current_batch_id = _latest_batch_id(conn)
         rows = conn.execute(
             f"""SELECT ac.*,sr.title,sr.summary,sr.content_json,sr.evidence_type,sr.source_refs_json
                   FROM alert_case ac JOIN source_record sr ON sr.id=ac.record_id
-                  WHERE sr.sensitivity IN ({placeholders}) ORDER BY ac.id""",
-            allowed,
+                  WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders}) ORDER BY ac.id""",
+            (current_batch_id, *allowed),
         ).fetchall()
     items = []
     for row in rows:
@@ -559,14 +809,30 @@ def alerts(role: RoleName = "researcher") -> dict:
             "status": row["status"], "assignee": row["assignee"], "note": row["note"],
             "updated_at": row["updated_at"], "trigger": "规则命中",
         })
-    return {"items": items, "count": len(items), "notice": "已生成规则命中线索，供人工核验与处置。"}
+    with db() as conn:
+        public_mode = _latest_batch_code(conn) == PUBLIC_BATCH_CODE
+    return {
+        "items": items,
+        "count": len(items),
+        "mode": "PUBLIC_WEB_SAMPLE" if public_mode else "TEST_DATA",
+        "notice": (
+            "公开样本尚未运行经评测的风险模型，当前没有自动生成风险结论。"
+            if public_mode
+            else "已生成规则命中线索，供人工核验与处置。"
+        ),
+    }
 
 
 @app.patch("/api/alerts/{alert_id}")
 def update_alert(alert_id: str, request: AlertAction) -> dict:
     _require_core(request.role)
     with db() as conn:
-        row = conn.execute("SELECT id FROM alert_case WHERE id=?", (alert_id,)).fetchone()
+        current_batch_id = _latest_batch_id(conn)
+        row = conn.execute(
+            """SELECT ac.id FROM alert_case ac JOIN source_record sr ON sr.id=ac.record_id
+                 WHERE ac.id=? AND sr.batch_id=?""",
+            (alert_id, current_batch_id),
+        ).fetchone()
         if not row:
             raise HTTPException(404, "预警记录不存在")
         timestamp = now_iso()
@@ -583,21 +849,24 @@ def knowledge_collections(role: RoleName = "researcher") -> dict:
     sql = """SELECT kc.*,kv.id AS version_id,kv.version,kv.status AS version_status,
                     kv.entry_count,kv.chunk_count,kv.created_at AS version_created_at,kv.notes
              FROM knowledge_collection kc LEFT JOIN knowledge_version kv ON kv.collection_id=kc.id
+             WHERE kv.batch_id=?
              ORDER BY kc.updated_at DESC"""
     with db() as conn:
-        items = rows_to_dicts(conn.execute(sql).fetchall())
+        current_batch_id = _latest_batch_id(conn)
+        items = rows_to_dicts(conn.execute(sql, (current_batch_id,)).fetchall()) if current_batch_id else []
         if role != "core":
             allowed = _allowed(role)
             placeholders = ",".join("?" for _ in allowed)
+            current_batch_id = _latest_batch_id(conn)
             visible_entries = conn.execute(
-                f"SELECT COUNT(*) FROM source_record WHERE sensitivity IN ({placeholders})",
-                allowed,
-            ).fetchone()[0]
+                f"SELECT COUNT(*) FROM source_record WHERE batch_id=? AND sensitivity IN ({placeholders})",
+                (current_batch_id, *allowed),
+            ).fetchone()[0] if current_batch_id else 0
             visible_chunks = conn.execute(
                 f"""SELECT COUNT(*) FROM knowledge_chunk kc JOIN source_record sr ON sr.id=kc.record_id
-                      WHERE sr.sensitivity IN ({placeholders})""",
-                allowed,
-            ).fetchone()[0]
+                      WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders})""",
+                (current_batch_id, *allowed),
+            ).fetchone()[0] if current_batch_id else 0
             for item in items:
                 item["entry_count"] = visible_entries
                 item["chunk_count"] = visible_chunks
@@ -629,17 +898,18 @@ def quality(role: RoleName = "researcher") -> dict:
     allowed = _allowed(role)
     placeholders = ",".join("?" for _ in allowed)
     with db() as conn:
+        current_batch_id = _latest_batch_id(conn)
         items = rows_to_dicts(conn.execute(
             f"""SELECT qi.* FROM quality_issue qi JOIN source_record sr ON sr.id=qi.record_id
-                  WHERE sr.sensitivity IN ({placeholders}) ORDER BY qi.severity DESC,qi.id""",
-            allowed,
+                  WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders}) ORDER BY qi.severity DESC,qi.id""",
+            (current_batch_id, *allowed),
         ).fetchall())
         counts = rows_to_dicts(conn.execute(
             f"""SELECT qi.issue_type,qi.severity,COUNT(*) AS count
                   FROM quality_issue qi JOIN source_record sr ON sr.id=qi.record_id
-                  WHERE sr.sensitivity IN ({placeholders})
+                  WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders})
                   GROUP BY qi.issue_type,qi.severity ORDER BY count DESC""",
-            allowed,
+            (current_batch_id, *allowed),
         ).fetchall())
     return {"items": items, "count": len(items), "distribution": counts}
 
@@ -708,15 +978,16 @@ def report_templates() -> dict:
 @app.post("/api/reports/generate")
 def generate_report(request: ReportRequest) -> dict:
     with db() as conn:
-        batch = _batch_view(conn, role=request.role)
+        batch = _batch_view(conn, code=_latest_batch_code(conn), role=request.role)
+        current_batch_id = int(batch.get("id", 0) or 0)
         allowed = _allowed(request.role)
         placeholders = ",".join("?" for _ in allowed)
         quality_items = rows_to_dicts(conn.execute(
             f"""SELECT qi.severity,qi.title,qi.status FROM quality_issue qi
                   JOIN source_record sr ON sr.id=qi.record_id
-                  WHERE sr.sensitivity IN ({placeholders})
+                  WHERE sr.batch_id=? AND sr.sensitivity IN ({placeholders})
                   ORDER BY qi.severity DESC,qi.id LIMIT 8""",
-            allowed,
+            (current_batch_id, *allowed),
         ).fetchall())
     analysis_payload = analysis(request.role)
     citations = []
@@ -738,7 +1009,7 @@ def generate_report(request: ReportRequest) -> dict:
         "sections": sections,
         "quality_items": quality_items,
         "citations": citations,
-        "status": "GENERATED_FROM_TEST_BATCH",
+        "status": "GENERATED_FROM_PUBLIC_WEB_SAMPLE" if batch.get("code") == PUBLIC_BATCH_CODE else "GENERATED_FROM_TEST_BATCH",
         "notice": "报告由结构化规则生成，引用与证据性质随结果返回；未调用生成式大模型。",
     }
 
@@ -809,9 +1080,13 @@ def capabilities(role: RoleName = "researcher") -> dict:
 @app.get("/api/vectors/stats")
 def vector_stats(role: RoleName = "researcher") -> dict:
     with db() as conn:
+        current_batch_id = _latest_batch_id(conn)
         rows = conn.execute(
-            """SELECT dimensions,COUNT(*) AS count FROM knowledge_chunk GROUP BY dimensions ORDER BY count DESC"""
-        ).fetchall()
+            """SELECT kc.dimensions,COUNT(*) AS count FROM knowledge_chunk kc
+                 JOIN source_record sr ON sr.id=kc.record_id
+                 WHERE sr.batch_id=? GROUP BY kc.dimensions ORDER BY count DESC""",
+            (current_batch_id,),
+        ).fetchall() if current_batch_id else []
     indexed = [dict(row) for row in rows]
     active = any(
         int(item["dimensions"]) in {model["dimension"] for key, model in SEMANTIC_MODELS.items() if model["provider"] != "local"}
@@ -828,7 +1103,11 @@ def rebuild_vectors(request: RebuildVectorsRequest, role: RoleName = "researcher
     if model not in SEMANTIC_MODELS:
         raise HTTPException(400, f"不支持的向量模型：{model}")
     with db() as conn:
-        version = conn.execute("SELECT id,collection_id FROM knowledge_version ORDER BY created_at DESC LIMIT 1").fetchone()
+        current_batch_id = _latest_batch_id(conn)
+        version = conn.execute(
+            "SELECT id,collection_id FROM knowledge_version WHERE batch_id=? ORDER BY created_at DESC,id DESC LIMIT 1",
+            (current_batch_id,),
+        ).fetchone() if current_batch_id else None
         if not version:
             raise HTTPException(404, "没有可重建的知识版本")
         rows = conn.execute(
@@ -857,7 +1136,7 @@ def rebuild_vectors(request: RebuildVectorsRequest, role: RoleName = "researcher
             object_id=str(version["collection_id"]),
             detail=f"{model}@{dimension} 维",
             outcome="SUCCESS" if meta["embedding_active"] else "DEGRADED",
-            batch_id=BATCH_CODE,
+            batch_id=active_batch_code(conn) or BATCH_CODE,
         )
     return {
         "indexed": len(rows),
@@ -898,7 +1177,18 @@ def audit_blocks(role: RoleName = "researcher") -> dict:
     with db() as conn:
         rows = conn.execute("SELECT * FROM audit_block ORDER BY height DESC LIMIT 200").fetchall()
         verification = verify_audit_chain(conn)
-    return {"blocks": [dict(row) for row in rows], "verification": verification}
+    blocks = [dict(row) for row in rows]
+    if role != "core":
+        blocks = [
+            {
+                **block,
+                "actor": "已隐藏",
+                "object_id": "已隐藏",
+                "detail": "该审计区块详情仅限核心课题组查看",
+            }
+            for block in blocks
+        ]
+    return {"blocks": blocks, "verification": verification, "details_redacted": role != "core"}
 
 
 @app.get("/api/audit/verify")

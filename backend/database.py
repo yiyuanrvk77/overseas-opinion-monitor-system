@@ -36,6 +36,12 @@ CREATE TABLE IF NOT EXISTS dataset_batch (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS workspace_setting (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS source_record (
     id TEXT PRIMARY KEY,
     batch_id INTEGER NOT NULL REFERENCES dataset_batch(id) ON DELETE CASCADE,
@@ -263,12 +269,12 @@ CONNECTORS = [
 REQUIREMENTS = [
     ("REQ-01", "监测对象", "第一层：美国核心政要及家族动态、言论与互动", "P0", "IMPLEMENTED", "测试批次人物、账号、内容与角色过滤", "当前仅由可替换测试数据验证，正式平台连接待接入"),
     ("REQ-02", "监测对象", "第二层A：西方世家及政治经济精英关系网络", "P1", "SCAFFOLDED", "异构人物关系模型和图谱接口", "正式对象名录、商业网络和倾向模型待配置"),
-    ("REQ-03", "监测对象", "第二层B：西方主流媒体涉华报道与叙事变化", "P1", "SCAFFOLDED", "媒体连接器注册和内容数据契约", "连续媒体样本及叙事变化模型待接入"),
+    ("REQ-03", "监测对象", "第二层B：西方主流媒体涉华报道与叙事变化", "P1", "PARTIAL", "六家媒体公开源巡检、专题样本、来源证据和内容数据契约", "连续样本、正式全文授权及叙事变化模型待接入"),
     ("REQ-04", "监测对象", "第三层：海外社交平台高影响力涉华账号", "P2", "SCAFFOLDED", "账号实体、影响字段和筛选接口", "粉丝阈值和涉华频率需用正式数据计算"),
-    ("REQ-05", "数据采集", "六个社媒与六个主流媒体平台覆盖", "P0", "SCAFFOLDED", "12个平台连接器注册表", "全部连接器保持未配置状态，等待正式授权"),
+    ("REQ-05", "数据采集", "六个社媒与六个主流媒体平台覆盖", "P0", "PARTIAL", "12个渠道公开 RSS/HTML 巡检、访问状态审计和正式连接器注册表", "公开巡检不等同于正式授权连接器；受限渠道等待官方 API 或供应商接口"),
     ("REQ-06", "数据采集", "人名、账号ID、关键词、话题标签多维任务", "P0", "IMPLEMENTED", "四种维度任务草稿持久化接口", "连接器就绪前任务不进入运行态"),
     ("REQ-07", "数据采集", "文本、图片、视频多模态及多语种采集翻译", "P1", "SCAFFOLDED", "媒体类型、语言字段和连接器能力声明", "OCR、ASR和翻译服务待部署"),
-    ("REQ-08", "数据采集", "至少近三个月公开数据回溯", "P1", "SCAFFOLDED", "任务历史天数字段限制为90天", "实际回溯依赖平台授权和分页能力"),
+    ("REQ-08", "数据采集", "至少近三个月公开数据回溯", "P1", "PARTIAL", "公开专题快照覆盖跨月记录，任务历史天数字段限制为90天", "全量三个月分页回溯仍依赖平台授权和正式接口"),
     ("REQ-09", "数据采集", "分钟、小时、每日差异化采集频率", "P2", "SCAFFOLDED", "任务频率枚举与暂停/归档状态", "生产调度器、限流和重试队列待部署"),
     ("REQ-10", "数据采集", "时间、互动量及关联账号等完整元数据", "P2", "IMPLEMENTED", "规范化记录、原始JSON、批次、哈希与来源锚点", "ZIP缺少的URL和帖子ID作为质量问题保留"),
     ("REQ-11", "人物画像", "身份、职务、家族背景与机构基础画像", "P0", "IMPLEMENTED", "人物实体、详情抽屉、来源与敏感级", "正式画像更新需要对象维护审批流程"),
@@ -277,7 +283,7 @@ REQUIREMENTS = [
     ("REQ-14", "人物画像", "互动、引用、亲属与商业关联图谱", "P1", "IMPLEMENTED", "人物、事件、传播、证据四种有向图", "部分边为源文件作者分析，已单独标记证据性质"),
     ("REQ-15", "人物画像", "粉丝、互动率与传播范围影响力评估", "P1", "PARTIAL", "保留源文件粉丝和互动字段", "统一影响力公式及正式触达数据待确认"),
     ("REQ-16", "人物画像", "定位异常、批量转发和机器账号特征识别", "P2", "SCAFFOLDED", "质量问题和异常扩展字段", "需要带真值的异常账号数据集和模型评测"),
-    ("REQ-17", "智能分析", "涉华内容自动识别与热点发现", "P0", "SCAFFOLDED", "主题标签聚合与检索接口", "正式涉华分类模型及独立评测集待接入"),
+    ("REQ-17", "智能分析", "涉华内容自动识别与热点发现", "P0", "PARTIAL", "公开采集器规则命中、三专题聚合与混合检索接口", "正式涉华分类模型、趋势窗口及独立评测集待接入"),
     ("REQ-18", "智能分析", "情感三分类、核心议题与关键词", "P0", "PARTIAL", "源文件主题统计；情感明确标记未运行", "需要人工情感真值和模型版本后方可输出比例"),
     ("REQ-19", "智能分析", "传播路径、关键节点与发酵趋势", "P1", "PARTIAL", "发布、引用和主题关系传播图", "完整转发链和时序趋势依赖平台原始ID"),
     ("REQ-20", "风险预警", "主权、安全与发展利益风险分级预警", "P0", "PARTIAL", "测试字段命中、认领、处置和审计接口", "当前风险等级来自测试源字段；生产规则矩阵、阈值和通知渠道需课题组确认"),
@@ -360,6 +366,32 @@ def init_db(path: Path | None = None) -> None:
                  verification=excluded.verification, note=excluded.note""",
             REQUIREMENTS,
         )
+
+
+def active_batch_code(conn: sqlite3.Connection) -> str | None:
+    """Return the explicitly selected batch, falling back to the newest batch."""
+    setting = conn.execute(
+        "SELECT value FROM workspace_setting WHERE key='active_batch_code'"
+    ).fetchone()
+    if setting:
+        selected = conn.execute(
+            "SELECT code FROM dataset_batch WHERE code=?", (setting["value"],)
+        ).fetchone()
+        if selected:
+            return str(selected["code"])
+    row = conn.execute(
+        "SELECT code FROM dataset_batch ORDER BY updated_at DESC,id DESC LIMIT 1"
+    ).fetchone()
+    return str(row["code"]) if row else None
+
+
+def set_active_batch(conn: sqlite3.Connection, code: str) -> None:
+    """Persist the batch used by user-facing workbench views."""
+    conn.execute(
+        """INSERT INTO workspace_setting(key,value,updated_at) VALUES('active_batch_code',?,?)
+           ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at""",
+        (code, now_iso()),
+    )
 def ensure_knowledge_chunk_constraint(conn: sqlite3.Connection) -> None:
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS ux_knowledge_chunk_version_record "
